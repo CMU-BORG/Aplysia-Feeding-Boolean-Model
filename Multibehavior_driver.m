@@ -57,7 +57,7 @@ mechanicalAtLips = ones(1,nt);
 mechanicalInGrasper = zeros(1,nt);
 [bite_avec,bite_bvec,bite_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
 
-Plot_behavior_V009(t,bite_avec,bite_bvec,bite_cvec,['Bite_' suffix],xlimits)
+Plot_behavior(t,bite_avec,bite_bvec,bite_cvec,['Bite_' suffix],xlimits)
 
 %% Swallowing
 chemicalAtLips = ones(1,nt);
@@ -65,7 +65,7 @@ mechanicalAtLips = ones(1,nt);
 mechanicalInGrasper = ones(1,nt);
 [swallow_avec,swallow_bvec,swallow_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
 
-Plot_behavior_V009(t,swallow_avec,swallow_bvec,swallow_cvec,['Swallow_' suffix],xlimits)
+Plot_behavior(t,swallow_avec,swallow_bvec,swallow_cvec,['Swallow_' suffix],xlimits)
 
 %% Rejection
 chemicalAtLips = zeros(1,nt);
@@ -73,7 +73,7 @@ mechanicalAtLips = ones(1,nt);
 mechanicalInGrasper = ones(1,nt);
 [reject_avec,reject_bvec,reject_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
 
-Plot_behavior_V009(t,reject_avec,reject_bvec,reject_cvec,['Reject_' suffix],xlimits)
+Plot_behavior(t,reject_avec,reject_bvec,reject_cvec,['Reject_' suffix],xlimits)
 
 %% Multifunctional swallowing of different strength seaweeds
 seaweed_strength_min = 0.1;
@@ -122,7 +122,7 @@ stim=zeros(13,nt);
 seaweed_strength = 10;
 [swallowToReject_avec,swallowToReject_bvec,swallowToReject_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
 
-Plot_behavior_V009(t,swallowToReject_avec,swallowToReject_bvec,swallowToReject_cvec,['SwallowToReject_' suffix],xlimits)
+Plot_behavior(t,swallowToReject_avec,swallowToReject_bvec,swallowToReject_cvec,['SwallowToReject_' suffix],xlimits)
 
 %% Biting to swallowing
 t_switch = 19.01;
@@ -136,7 +136,7 @@ stim=zeros(13,nt);
 seaweed_strength = 10;
 [biteToSwallow_avec,biteToSwallow_bvec,biteToSwallow_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
 
-Plot_behavior_V009(t,biteToSwallow_avec,biteToSwallow_bvec,biteToSwallow_cvec,['BiteToSwallow_' suffix],xlimits)
+Plot_behavior(t,biteToSwallow_avec,biteToSwallow_bvec,biteToSwallow_cvec,['BiteToSwallow_' suffix],xlimits)
 
 %% B4/B5 Stimulation
 % create stimulation pattern
@@ -155,7 +155,7 @@ seaweed_strength = 10;
 [B4B5stim_avec,B4B5stim_bvec,B4B5stim_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
 
 xlimits = [2 t_transition_B4duration];
-Plot_behavior_V009(t,B4B5stim_avec,B4B5stim_bvec,B4B5stim_cvec,['B4B5stim_' suffix],xlimits)
+Plot_behavior(t,B4B5stim_avec,B4B5stim_bvec,B4B5stim_cvec,['B4B5stim_' suffix],xlimits)
 
 
 %% Plotting swallowing vs. rejection vs. biting
