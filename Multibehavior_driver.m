@@ -55,7 +55,7 @@ stim=zeros(13,nt);
 chemicalAtLips = ones(1,nt);
 mechanicalAtLips = ones(1,nt);
 mechanicalInGrasper = zeros(1,nt);
-[bite_avec,bite_bvec,bite_cvec] = Aplysia_boolean_model_V009(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
+[bite_avec,bite_bvec,bite_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
 
 Plot_behavior_V009(t,bite_avec,bite_bvec,bite_cvec,['Bite_' suffix],xlimits)
 
@@ -63,7 +63,7 @@ Plot_behavior_V009(t,bite_avec,bite_bvec,bite_cvec,['Bite_' suffix],xlimits)
 chemicalAtLips = ones(1,nt);
 mechanicalAtLips = ones(1,nt);
 mechanicalInGrasper = ones(1,nt);
-[swallow_avec,swallow_bvec,swallow_cvec] = Aplysia_boolean_model_V009(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
+[swallow_avec,swallow_bvec,swallow_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
 
 Plot_behavior_V009(t,swallow_avec,swallow_bvec,swallow_cvec,['Swallow_' suffix],xlimits)
 
@@ -71,7 +71,7 @@ Plot_behavior_V009(t,swallow_avec,swallow_bvec,swallow_cvec,['Swallow_' suffix],
 chemicalAtLips = zeros(1,nt);
 mechanicalAtLips = ones(1,nt);
 mechanicalInGrasper = ones(1,nt);
-[reject_avec,reject_bvec,reject_cvec] = Aplysia_boolean_model_V009(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
+[reject_avec,reject_bvec,reject_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
 
 Plot_behavior_V009(t,reject_avec,reject_bvec,reject_cvec,['Reject_' suffix],xlimits)
 
@@ -88,7 +88,7 @@ for seaweed_strength = seaweed_strength_min:step_size:seaweed_strength_max
     chemicalAtLips = ones(1,nt);
     mechanicalAtLips = ones(1,nt);
     mechanicalInGrasper = ones(1,nt);
-    [swallow_avec2,swallow_bvec2,swallow_cvec2] = Aplysia_boolean_model_V009(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
+    [swallow_avec2,swallow_bvec2,swallow_cvec2] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
     
     seaweed_strength_result{i,:} = {seaweed_strength,swallow_avec2,swallow_bvec2,swallow_cvec2};
     
@@ -120,7 +120,7 @@ mechanicalAtLips = ones(1,nt);
 mechanicalInGrasper = ones(1,nt);
 stim=zeros(13,nt);
 seaweed_strength = 10;
-[swallowToReject_avec,swallowToReject_bvec,swallowToReject_cvec] = Aplysia_boolean_model_V009(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
+[swallowToReject_avec,swallowToReject_bvec,swallowToReject_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
 
 Plot_behavior_V009(t,swallowToReject_avec,swallowToReject_bvec,swallowToReject_cvec,['SwallowToReject_' suffix],xlimits)
 
@@ -134,7 +134,7 @@ mechanicalInGrasper = zeros(1,nt);
 mechanicalInGrasper(1,step_switch:nt) = ones(1,length(step_switch:nt));
 stim=zeros(13,nt);
 seaweed_strength = 10;
-[biteToSwallow_avec,biteToSwallow_bvec,biteToSwallow_cvec] = Aplysia_boolean_model_V009(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
+[biteToSwallow_avec,biteToSwallow_bvec,biteToSwallow_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
 
 Plot_behavior_V009(t,biteToSwallow_avec,biteToSwallow_bvec,biteToSwallow_cvec,['BiteToSwallow_' suffix],xlimits)
 
@@ -152,7 +152,7 @@ chemicalAtLips = ones(1,nt);
 mechanicalAtLips = ones(1,nt);
 mechanicalInGrasper = ones(1,nt);
 seaweed_strength = 10;
-[B4B5stim_avec,B4B5stim_bvec,B4B5stim_cvec] = Aplysia_boolean_model_V009(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
+[B4B5stim_avec,B4B5stim_bvec,B4B5stim_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
 
 xlimits = [2 t_transition_B4duration];
 Plot_behavior_V009(t,B4B5stim_avec,B4B5stim_bvec,B4B5stim_cvec,['B4B5stim_' suffix],xlimits)
