@@ -17,7 +17,9 @@ Last Update: 5/4/2020
 This Model contains three MATLAB .m files for simulating Aplysia-like multifunctional feeding behavior. The three files are as follows:
 
 1. Multibehavior_driver_V009.m
+
 This file is the driver function which contains code sections for running the following behaviors
+
 	A. Biting
 	B. Swallowing
 	C. Rejection
@@ -29,9 +31,11 @@ This file is the driver function which contains code sections for running the fo
 Multibehavior_driver.m call two helper functions:
 	
 2. Aplysia_boolean_model.m
+
 This file is the hybrid Boolean/continuous model of the Aplysia feeding circuitry and biomechanics.
 
 3. Plot_behavior.m
+
 This is a helper function to plot the neural activity, relative grasper position, and force on the seaweed following simulation of a given behavior
 
 
