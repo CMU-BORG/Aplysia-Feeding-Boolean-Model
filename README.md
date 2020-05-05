@@ -16,7 +16,7 @@ Last Update: 5/4/2020
 
 This Model contains three MATLAB .m files for simulating Aplysia-like multifunctional feeding behavior. The three files are as follows:
 
-1. Multibehavior_driver_V009.m
+1. Multibehavior_driver.m
 
 This file is the driver function which contains code sections for running the following behaviors
 
