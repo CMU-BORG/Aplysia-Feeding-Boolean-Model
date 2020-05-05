@@ -10,7 +10,7 @@
 %
 % Last Update: 5/4/2020
 
-function [avec,bvec,cvec] = Aplysia_boolean_model_V009(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength)
+function [avec,bvec,cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength)
 
 
 %% Preallocate arrays
@@ -273,7 +273,7 @@ for j=2:(nt-1)
     
     %% Update CBI4 - added 2/27/2020
     %{
-    CBI4 is active IF – mediates swallowing and rejection
+    CBI4 is active IF Â– mediates swallowing and rejection
         MCC is on
         AND
             (Mechanical Stimulation at Lips
