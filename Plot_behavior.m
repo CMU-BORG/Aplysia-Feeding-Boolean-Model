@@ -1,4 +1,4 @@
-function Plot_behavior_V009(t,avec,bvec,cvec,label,xlimits)
+function Plot_behavior(t,avec,bvec,cvec,label,xlimits)
 figure('Position', [10 10 500 800])
 set(gcf,'Color','white')
 %xl=16+[-1 1]; % zoom in on t=19 (for V012, when B20 starts)
