@@ -2,7 +2,7 @@ close all
 clear all
 
 %% Specify label suffix for saving figures
-suffix = '5_4_2020';
+suffix = '5_7_2020';
 
 %% Set simulation parameters
 params{1,1} = .05; %dt Time units in seconds
@@ -30,7 +30,7 @@ params{17,1} = 0.1; %gap influence of CBI2-CBI3 gap junction on a scale of 0 to 
 params{18,1} = 190; %CBI3 refractory period duration
 params{19,1} = 1; %Maximum I3 force
 params{20,1} = 1; %Maximum I2 force
-params{21,1} = 0.05; %Maximum hinge force
+params{21,1} = 0.2; %Maximum hinge force
 
 
 thresholds{1,1} = 0.75; %Prot_thresh threshold for having reached sufficient protraction - original 0.8
@@ -39,11 +39,11 @@ thresholds{3,1} = 0.5; % threshold for activing B38 when B20 is silent (retracti
 thresholds{4,1} = 0.4; % threshold for activing B38 when B20 is active (protraction/egestion)
 thresholds{5,1} = 0.9; %B64_thresh_retract_biting
 thresholds{6,1} = 0.5; %B64_thresh_retract_swallowing 
-thresholds{7,1} = 0.55; %B64_thresh_retract_reject
+thresholds{7,1} = 0.5; %B64_thresh_retract_reject
 thresholds{8,1} = 0.45; %B64_thresh_protract_biting
 thresholds{9,1} = 0.45; %B64_thresh_protract_swallowing
 thresholds{10,1} = 0.3; %B64_thresh_protract_reject
-thresholds{11,1} = 0.2; %B4B5 threshold
+thresholds{11,1} = 0.7; %B4B5 threshold
 
 seaweed_strength = 10;
 

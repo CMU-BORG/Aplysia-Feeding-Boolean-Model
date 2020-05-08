@@ -273,7 +273,7 @@ for j=2:(nt-1)
     
     %% Update CBI4 - added 2/27/2020
     %{
-    CBI4 is active IF Â– mediates swallowing and rejection
+    CBI4 is active IF – mediates swallowing and rejection
         MCC is on
         AND
             (Mechanical Stimulation at Lips
@@ -473,11 +473,17 @@ for j=2:(nt-1)
     end
 
     %B6/B9/B3
-    avec(5,j+1)=MCC_last*((CBI3_last)*... Ingestion / CBI3 inactive
+%     avec(5,j+1)=MCC_last*((CBI3_last)*... Ingestion / CBI3 inactive
+%        (B64_last)*(GrapserPressure_last>(B6B9B3_pressure_thresh*pmax))...
+%        +...
+%        (~CBI3_last)*...Egestion / CBI3 active
+%        ((B4B5_last>=2)||((position_grasper_relative)<0.7))*... 
+%        (B64_last)*(GrapserPressure_last<(.75*pmax))); 
+
+    avec(5,j+1)=MCC_last*(~(B4B5_last>=2))*((CBI3_last)*... Ingestion / CBI3 inactive
        (B64_last)*(GrapserPressure_last>(B6B9B3_pressure_thresh*pmax))...
        +...
        (~CBI3_last)*...Egestion / CBI3 active
-       ((B4B5_last>=2)||((position_grasper_relative)<0.7))*... 
        (B64_last)*(GrapserPressure_last<(.75*pmax))); 
 
     
@@ -505,9 +511,11 @@ for j=2:(nt-1)
     %}
     
     %B8a/b - updated 2/27/2020
-    avec(1,j+1)=MCC_last*(((B40B30_last||B20_last)||B64_last)*...
-        (~(B4B5_last>=2))*... %B4/5 inhibits when strongly active, added min so that can't be below zero
-        (B20_last||(~B31B32_last)));
+    avec(1,j+1)=MCC_last*(~(B4B5_last>=2))*(...%B4/5 inhibits when strongly active, added min so that can't be below zero
+        CBI3_last*(((B40B30_last||B20_last)||B64_last)*...
+        (B20_last||(~B31B32_last)))+...
+        (~CBI3_last)*((B40B30_last||B64_last)*...
+        (B20_last))); 
     
     %% Update B7 - ONLY ACTIVE DURING EGESTION and BITING
     % turn on as you get to peak protraction
