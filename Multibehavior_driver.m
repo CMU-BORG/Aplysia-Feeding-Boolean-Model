@@ -2,7 +2,7 @@ close all
 clear all
 
 %% Specify label suffix for saving figures
-suffix = '5_7_2020';
+suffix = '5_11_2020';
 
 %% Set simulation parameters
 params{1,1} = .05; %dt Time units in seconds
@@ -44,7 +44,20 @@ thresholds{8,1} = 0.45; %B64_thresh_protract_biting
 thresholds{9,1} = 0.45; %B64_thresh_protract_swallowing
 thresholds{10,1} = 0.3; %B64_thresh_protract_reject
 thresholds{11,1} = 0.7; %B4B5 threshold
+thresholds{12,1} = 0.75; %B31/B32 threshold for protraction during swallowing
+thresholds{13,1} = 0.9; %B31/B32 threshold for protraction during rejection
+thresholds{14,1} = 0.6; %B31/B32 threshold for retraction during rejection
+thresholds{15,1} = 0.9; %B31/B32 threshold for protraction during biting
+thresholds{16,1} = 0.55; %B31/B32 threshold for retraction during biting
+thresholds{17,1} = 0.7; %B7_thresh_protract_reject threshold for protraction during rejection
+thresholds{18,1} = 0.9; %B7_thresh_protract_biting threshold for protraction during biting
+thresholds{19,1} = 0.25; %B6B9B3_pressure_thresh_swallowing
+thresholds{20,1} = 0.2; %B6B9B3_pressure_thresh_biting
+thresholds{21,1} = 0.75; %B6B9B3_pressure_thresh_reject
 
+
+
+    
 seaweed_strength = 10;
 
 

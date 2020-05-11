@@ -8,7 +8,7 @@
 % in consultation with Jeff Gill, CWRU
 %
 %
-% Last Update: 5/4/2020
+% Last Update: 5/11/2020
 
 function [avec,bvec,cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength)
 
@@ -107,9 +107,20 @@ B64_thresh_protract_biting = thresholds{8,1};
 B64_thresh_protract_swallowing = thresholds{9,1};
 B64_thresh_protract_reject = thresholds{10,1};
 B4B5_threshold = thresholds{11,1};
+B31_thresh_protract_swallow = thresholds{12,1}; %B31/B32 threshold for protraction during swallowing
+B31_thresh_protract_reject = thresholds{13,1}; %B31/B32 threshold for protraction during rejection
+B31_thresh_retract_reject = thresholds{14,1}; %B31/B32 threshold for retraction during rejection
+B31_thresh_protract_bite = thresholds{15,1}; %B31/B32 threshold for protraction during biting
+B31_thresh_retract_bite = thresholds{16,1}; %B31/B32 threshold for retraction during biting
+B7_thresh_protract_reject = thresholds{17,1}; %B7_thersh_protract_reject threshold for protraction during rejection
+B7_thresh_protract_biting = thresholds{18,1}; %B7_thresh_protract_biting threshold for protraction during biting
+B6B9B3_pressure_thresh_swallowing = thresholds{19,1}; %B6B9B3_pressure_thresh_swallowing
+B6B9B3_pressure_thresh_biting = thresholds{20,1}; %B6B9B3_pressure_thresh_biting
+B6B9B3_pressure_thresh_reject = thresholds{21,1}; %B6B9B3_pressure_thresh_reject
+
 
 CBI3_stimTime = 0;
-CBI3_holdOn = 0;
+CBI3_refractory = 0;
 
 %% Initial conditions: Let's start while B38 and B31/32 etc. are turned on,
 % at the start of the protraction phase, so the grasper is retracted and
@@ -228,16 +239,17 @@ for j=2:(nt-1)
     CBI2 is active IF
         MCC is on 
         AND (
-            (Mechanical Stimulation at Lips OR Chemical Stimulation at Lips)
+            (Mechanical Stimulation at Lips AND Chemical Stimulation at Lips AND No mechanical stimuli in grasper)
             OR 
+            (Mechanical in grasper and no Chemical Stimulation at Lips)
             (B4/B5 is firing strongly (>=2)))
         AND NOT (Mechanical stimulation in grasper)
     %}
 
     %CBI2 - updated 2/27/2020
     avec(7,j+1) = (electrode_CBI2==0)*... if electrode above CBI-2 is off, do this:
-        MCC_last*((stimuli_mech_last||stimuli_chem_last)||(B4B5_last>=2))*(~mechanical_in_grasper)...
-        +(electrode_CBI2==1);
+        MCC_last*((stimuli_mech_last&&stimuli_chem_last&&(~mechanical_in_grasper))||(mechanical_in_grasper&&(~stimuli_chem_last))||(B4B5_last>=2))+...
+        (electrode_CBI2==1);
 
     %% Update CBI-3
     % requires stimuli_mech_last AND stimuli_chem_last
@@ -258,17 +270,17 @@ for j=2:(nt-1)
     %check if a refractory period is occuring
     if((B4B5_last>=2) && (CBI3_stimTime==0))
        CBI3_stimTime = j;   
-       CBI3_holdOn = 1;
+       CBI3_refractory = 1;
     end
-    if(CBI3_holdOn && j<(CBI3_stimTime+CBI3_holdTime))
-       CBI3_holdOn = 1; 
+    if(CBI3_refractory && j<(CBI3_stimTime+CBI3_holdTime))
+       CBI3_refractory = 1; 
     else
         CBI3_stimTime = 0;
-        CBI3_holdOn = 0; 
+        CBI3_refractory = 0; 
     end
 
     %CBI3    
-    avec(8,j+1) = MCC_last*(stimuli_mech_last*stimuli_chem_last)*((B4B5_last<2))*(~CBI3_holdOn); 
+    avec(8,j+1) = MCC_last*(stimuli_mech_last*stimuli_chem_last)*((B4B5_last<2))*(~CBI3_refractory); 
 
     
     %% Update CBI4 - added 2/27/2020
@@ -323,12 +335,12 @@ for j=2:(nt-1)
             NOT(Relative Grasper Position is less than B64 Rejection Protraction threshold)
     %}
     
-    B64_ProtractionExcitation = (CBI3_last*((mechanical_in_grasper*(position_grasper_relative>B64_thresh_protract_swallowing))+...
-                                           ((~mechanical_in_grasper)*(position_grasper_relative>B64_thresh_protract_biting))))+...
+    B64_ProtractionExcitation = (CBI3_last*((mechanical_in_grasper*(position_grasper_relative>B64_thresh_protract_swallowing))||...
+                                           ((~mechanical_in_grasper)*(position_grasper_relative>B64_thresh_protract_biting))))||...
                                ((~CBI3_last)*(position_grasper_relative>B64_thresh_protract_reject)); % checks  protraction threshold - original 0.5
                            
-    B64_RetractionInhibition = (CBI3_last*((mechanical_in_grasper*(~(position_grasper_relative<B64_thresh_retract_swallowing)))+...
-                                           ((~mechanical_in_grasper)*(~(position_grasper_relative<B64_thresh_retract_biting)))))+...
+    B64_RetractionInhibition = (CBI3_last*((mechanical_in_grasper*(~(position_grasper_relative<B64_thresh_retract_swallowing)))||...
+                                           ((~mechanical_in_grasper)*(~(position_grasper_relative<B64_thresh_retract_biting)))))||...
                                ((~CBI3_last)*(~(position_grasper_relative<B64_thresh_retract_reject))); % checks retraction threshold - original 0.5    
     
     %B64
@@ -429,12 +441,13 @@ for j=2:(nt-1)
     %B31/B32s thresholds may vary for different behaviors. These are set
     %here
     if (mechanical_in_grasper && CBI3_last) %swallowing
-        prot_thresh = 0.75;
+        prot_thresh = B31_thresh_protract_swallow;
     elseif (mechanical_in_grasper && (~CBI3_last)) %rejection
-        prot_thresh = 0.9;
+        prot_thresh = B31_thresh_protract_reject;
+        ret_thresh = B31_thresh_retract_reject;
     else %biting
-        prot_thresh = 0.9;
-        ret_thresh = 0.55;        
+        prot_thresh = B31_thresh_protract_bite;
+        ret_thresh = B31_thresh_retract_bite;        
     end
 
     avec(4,j+1)=MCC_last*(CBI3_last*... %if ingestion
@@ -442,7 +455,7 @@ for j=2:(nt-1)
       ((~B31B32_last)*(position_grasper_relative<=ret_thresh)+B31B32_last*(position_grasper_relative<prot_thresh)))+...
       (~CBI3_last)*... %if egestion
       ((~B64_last)*(GrapserPressure_last>(pmax/4))*(CBI2_last||CBI4_last)*...
-      ((~B31B32_last)*(position_grasper_relative<0.6)+B31B32_last*(position_grasper_relative<prot_thresh))));
+      ((~B31B32_last)*(position_grasper_relative<ret_thresh)+B31B32_last*(position_grasper_relative<prot_thresh))));
              
     %% Update B6/B9/B3: 
     % activate once pressure is high enough, 
@@ -466,10 +479,12 @@ for j=2:(nt-1)
 
     %B6/B9/B3s thresholds may vary for different behaviors. These are set
     %here
-    if (mechanical_in_grasper)
-        B6B9B3_pressure_thresh = 0.25;
+    if (mechanical_in_grasper && CBI3_last)
+        B6B9B3_pressure_thresh = B6B9B3_pressure_thresh_swallowing;
+    elseif (~mechanical_in_grasper && CBI3_last)
+        B6B9B3_pressure_thresh = B6B9B3_pressure_thresh_biting;
     else
-        B6B9B3_pressure_thresh = 0.2;
+        B6B9B3_pressure_thresh = B6B9B3_pressure_thresh_reject;
     end
 
     %B6/B9/B3
@@ -484,7 +499,7 @@ for j=2:(nt-1)
        (B64_last)*(GrapserPressure_last>(B6B9B3_pressure_thresh*pmax))...
        +...
        (~CBI3_last)*...Egestion / CBI3 active
-       (B64_last)*(GrapserPressure_last<(.75*pmax))); 
+       (B64_last)*(GrapserPressure_last<(B6B9B3_pressure_thresh*pmax))); 
 
     
     %% Update B8a/b
@@ -530,9 +545,9 @@ for j=2:(nt-1)
             There is NOT mechanical stimulation in mouth
     %}
     if (mechanical_in_grasper && (~CBI3_last)) %rejection
-        B7_thresh = 0.7;
+        B7_thresh = B7_thresh_protract_reject;
     else %biting
-        B7_thresh = 0.9;       
+        B7_thresh = B7_thresh_protract_biting;       
     end
     avec(11,j+1) = MCC_last*((~CBI3_last)||(~mechanical_in_grasper))*((position_grasper_relative>=B7_thresh)||(GrapserPressure_last>(.97*pmax)));
       
@@ -630,7 +645,7 @@ for j=2:(nt-1)
     
     %% Update forces on buccal mass and update
     body_forces = CBI3_last*(... %if ingestion
-        ((PinchState_last*force_pinch-...
+        ((PinchState_last*force_pinch*mechanical_in_grasper-...
          (~PinchState_last)*...
          (max_I3*I3_last*(0-(position_grasper_relative)))*(mechanical_in_grasper)*(force_on_seaweed<=seaweed_strength))+... %I3 moves body forward when the grasper is strongly grasping seaweed and the seaweed has not broken
          (buccalM_rest-position_buccal_last)*buccalM_K))+... 
