@@ -12,7 +12,7 @@ in consultation with Hillel Chiel, CWRU.
 
 in consultation with Jeff Gill, CWRU
 
-Last Update: 5/7/2020
+Last Update: 5/11/2020
 
 This Model contains three MATLAB .m files for simulating Aplysia-like multifunctional feeding behavior. The three files are as follows:
 
