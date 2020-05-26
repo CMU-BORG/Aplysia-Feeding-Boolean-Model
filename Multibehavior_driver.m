@@ -27,8 +27,8 @@ params{14,1} = 0.0; %buccalM_rest resting position of body
 params{15,1} = .15; %F_pinch pinch force, original 0.15params{18,1} = 1.0; %
 params{16,1} = 1; % force scaler
 params{17,1} = 0.1; %gap influence of CBI2-CBI3 gap junction on a scale of 0 to 1.  Not used yet...
-params{18,1} = 190; %CBI3 refractory period duration
-params{19,1} = 100; %B40B30 post activity B8 Excitation Duration 
+params{18,1} = 150; %CBI3 refractory period duration
+params{19,1} = 3000; %B40B30 post activity B8 Excitation Duration (Duration based on Jing et al. 2004)
 params{20,1} = 1; %Maximum I3 force
 params{21,1} = 1; %Maximum I2 force
 params{22,1} = 0.2; %Maximum hinge force

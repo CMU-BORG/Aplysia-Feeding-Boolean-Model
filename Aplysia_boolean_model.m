@@ -577,10 +577,10 @@ for j=2:(nt-1)
         B40B30_excite = 0; 
     end
     
-    %B8a/b - updated 5/21/2020
+    %B8a/b - updated 5/25/2020   
       avec(1,j+1)=MCC_last*(~(B4B5_last>=2))*(...%B4/5 inhibits when strongly active
         CBI3_last*(... % if ingestion
-            B20_last||(B40B30_excite||B64_last)*(~B31B32_last))+...
+            B20_last||(B40B30_excite)*(~B31B32_last))+...
         (~CBI3_last)*(... % if rejection
             B20_last)); 
     
