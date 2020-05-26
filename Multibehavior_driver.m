@@ -2,7 +2,7 @@ close all
 clear all
 
 %% Specify label suffix for saving figures
-suffix = '5_11_2020';
+suffix = '5_25_2020';
 
 %% Set simulation parameters
 params{1,1} = .05; %dt Time units in seconds
@@ -28,9 +28,10 @@ params{15,1} = .15; %F_pinch pinch force, original 0.15params{18,1} = 1.0; %
 params{16,1} = 1; % force scaler
 params{17,1} = 0.1; %gap influence of CBI2-CBI3 gap junction on a scale of 0 to 1.  Not used yet...
 params{18,1} = 190; %CBI3 refractory period duration
-params{19,1} = 1; %Maximum I3 force
-params{20,1} = 1; %Maximum I2 force
-params{21,1} = 0.2; %Maximum hinge force
+params{19,1} = 100; %B40B30 post activity B8 Excitation Duration 
+params{20,1} = 1; %Maximum I3 force
+params{21,1} = 1; %Maximum I2 force
+params{22,1} = 0.2; %Maximum hinge force
 
 
 thresholds{1,1} = 0.75; %Prot_thresh threshold for having reached sufficient protraction - original 0.8
@@ -45,15 +46,16 @@ thresholds{9,1} = 0.45; %B64_thresh_protract_swallowing
 thresholds{10,1} = 0.3; %B64_thresh_protract_reject
 thresholds{11,1} = 0.7; %B4B5 threshold
 thresholds{12,1} = 0.75; %B31/B32 threshold for protraction during swallowing
-thresholds{13,1} = 0.9; %B31/B32 threshold for protraction during rejection
-thresholds{14,1} = 0.6; %B31/B32 threshold for retraction during rejection
-thresholds{15,1} = 0.9; %B31/B32 threshold for protraction during biting
-thresholds{16,1} = 0.55; %B31/B32 threshold for retraction during biting
-thresholds{17,1} = 0.7; %B7_thresh_protract_reject threshold for protraction during rejection
-thresholds{18,1} = 0.9; %B7_thresh_protract_biting threshold for protraction during biting
-thresholds{19,1} = 0.25; %B6B9B3_pressure_thresh_swallowing
-thresholds{20,1} = 0.2; %B6B9B3_pressure_thresh_biting
-thresholds{21,1} = 0.75; %B6B9B3_pressure_thresh_reject
+thresholds{13,1} = 0.4; %B31/B32 threshold for retraction during swallowing
+thresholds{14,1} = 0.9; %B31/B32 threshold for protraction during rejection
+thresholds{15,1} = 0.6; %B31/B32 threshold for retraction during rejection
+thresholds{16,1} = 0.9; %B31/B32 threshold for protraction during biting
+thresholds{17,1} = 0.55; %B31/B32 threshold for retraction during biting
+thresholds{18,1} = 0.7; %B7_thresh_protract_reject threshold for protraction during rejection
+thresholds{19,1} = 0.9; %B7_thresh_protract_biting threshold for protraction during biting
+thresholds{20,1} = 0.25; %B6B9B3_pressure_thresh_swallowing
+thresholds{21,1} = 0.2; %B6B9B3_pressure_thresh_biting
+thresholds{22,1} = 0.75; %B6B9B3_pressure_thresh_reject
 
 
 

@@ -88,12 +88,13 @@ buccalM_rest = params{14,1}; % resting position of body
 F_pinch = params{15,1}; % pinch force, original 0.15
 force_scaler = params{16,1}; % 
 gap = params{17,1}; % influence of CBI2-CBI3 gap junction on a scale of 0 to 1.  Not used yet...
-CBI3_holdTime = params{18,1};
+CBI3_refractoryDuration = params{18,1};
+B40B30_postExcitationDuration = params{19,1};
 
 
-max_I3 = params{19,1}; %Maximum I3 force
-max_I2 = params{20,1}; %Maximum I2 force
-max_hinge = params{21,1}; %Maximum hinge force
+max_I3 = params{20,1}; %Maximum I3 force
+max_I2 = params{21,1}; %Maximum I2 force
+max_hinge = params{22,1}; %Maximum hinge force
 
 
 prot_thresh = thresholds{1,1}; % threshold for having reached sufficient protraction - original 0.8
@@ -108,19 +109,22 @@ B64_thresh_protract_swallowing = thresholds{9,1};
 B64_thresh_protract_reject = thresholds{10,1};
 B4B5_threshold = thresholds{11,1};
 B31_thresh_protract_swallow = thresholds{12,1}; %B31/B32 threshold for protraction during swallowing
-B31_thresh_protract_reject = thresholds{13,1}; %B31/B32 threshold for protraction during rejection
-B31_thresh_retract_reject = thresholds{14,1}; %B31/B32 threshold for retraction during rejection
-B31_thresh_protract_bite = thresholds{15,1}; %B31/B32 threshold for protraction during biting
-B31_thresh_retract_bite = thresholds{16,1}; %B31/B32 threshold for retraction during biting
-B7_thresh_protract_reject = thresholds{17,1}; %B7_thersh_protract_reject threshold for protraction during rejection
-B7_thresh_protract_biting = thresholds{18,1}; %B7_thresh_protract_biting threshold for protraction during biting
-B6B9B3_pressure_thresh_swallowing = thresholds{19,1}; %B6B9B3_pressure_thresh_swallowing
-B6B9B3_pressure_thresh_biting = thresholds{20,1}; %B6B9B3_pressure_thresh_biting
-B6B9B3_pressure_thresh_reject = thresholds{21,1}; %B6B9B3_pressure_thresh_reject
+B31_thresh_retract_swallow = thresholds{13,1}; %B31/B32 threshold for retraction during swallowing
+B31_thresh_protract_reject = thresholds{14,1}; %B31/B32 threshold for protraction during rejection
+B31_thresh_retract_reject = thresholds{15,1}; %B31/B32 threshold for retraction during rejection
+B31_thresh_protract_bite = thresholds{16,1}; %B31/B32 threshold for protraction during biting
+B31_thresh_retract_bite = thresholds{17,1}; %B31/B32 threshold for retraction during biting
+B7_thresh_protract_reject = thresholds{18,1}; %B7_thersh_protract_reject threshold for protraction during rejection
+B7_thresh_protract_biting = thresholds{19,1}; %B7_thresh_protract_biting threshold for protraction during biting
+B6B9B3_pressure_thresh_swallowing = thresholds{20,1}; %B6B9B3_pressure_thresh_swallowing
+B6B9B3_pressure_thresh_biting = thresholds{21,1}; %B6B9B3_pressure_thresh_biting
+B6B9B3_pressure_thresh_reject = thresholds{22,1}; %B6B9B3_pressure_thresh_reject
 
 
 CBI3_stimTime = 0;
 CBI3_refractory = 0;
+B40B30_onTime = 0;
+B40B30_offTime = 0;
 
 %% Initial conditions: Let's start while B38 and B31/32 etc. are turned on,
 % at the start of the protraction phase, so the grasper is retracted and
@@ -242,11 +246,11 @@ for j=2:(nt-1)
             (Mechanical Stimulation at Lips AND Chemical Stimulation at Lips AND No mechanical stimuli in grasper)
             OR 
             (Mechanical in grasper and no Chemical Stimulation at Lips)
+            OR
             (B4/B5 is firing strongly (>=2)))
-        AND NOT (Mechanical stimulation in grasper)
     %}
 
-    %CBI2 - updated 2/27/2020
+    %CBI2 - updated 5/11/2020
     avec(7,j+1) = (electrode_CBI2==0)*... if electrode above CBI-2 is off, do this:
         MCC_last*((stimuli_mech_last&&stimuli_chem_last&&(~mechanical_in_grasper))||(mechanical_in_grasper&&(~stimuli_chem_last))||(B4B5_last>=2))+...
         (electrode_CBI2==1);
@@ -261,18 +265,18 @@ for j=2:(nt-1)
         AND
         Chemical Stimulation at Lips
         AND
-        B4/B5 is not firing strongly
+        B4/B5 is NOT firing strongly
         AND
         CBI3 is NOT in a refractory period
     %}
     
-    %CBI3 can experieince a refractory period following stimulation
+    %CBI3 can experieince a refractory period following strong inhibition from B4/B5
     %check if a refractory period is occuring
     if((B4B5_last>=2) && (CBI3_stimTime==0))
        CBI3_stimTime = j;   
        CBI3_refractory = 1;
     end
-    if(CBI3_refractory && j<(CBI3_stimTime+CBI3_holdTime))
+    if(CBI3_refractory && j<(CBI3_stimTime+CBI3_refractoryDuration))
        CBI3_refractory = 1; 
     else
         CBI3_stimTime = 0;
@@ -291,8 +295,8 @@ for j=2:(nt-1)
             (Mechanical Stimulation at Lips
             OR
             Chemical Stimulation at Lips)
-            AND
-            Mechanical Stimulation in grasper
+        AND
+        Mechanical Stimulation in grasper
     %}
     avec(12,j+1) = MCC_last*(stimuli_mech_last||stimuli_chem_last)*mechanical_in_grasper;
     
@@ -316,36 +320,34 @@ for j=2:(nt-1)
     B64 is active IF
         MCC is on
         AND
-        IF CBI3 is active
-            IF mechanical stimulation is in grasper
+        IF CBI3 is active (ingestion)
+            IF mechanical stimulation is in grasper (swallowing)
                 Relative Grasper Position is Greater than B64 Swallowing Protraction threshold
-            If mechanical stimulation is NOT in grasper
+            IF mechanical stimulation is NOT in grasper (biting)
                 Relative Grasper Position is Greater than B64 Biting Protraction threshold
-        IF CBI3 is NOT active
+        IF CBI3 is NOT active (rejection)
             Relative Grasper Position is Greater than B64 Rejection Protraction threshold
         AND
         B31/B32 is NOT active
         AND
-        IF CBI3 is active
-            IF mechanical stimulation is in grasper
-                NOT (Relative Grasper Position is less than B64 Swallow Protraction threshold)
-            If mechanical stimulation is NOT in grasper
-                NOT(Relative Grasper Position is less than B64 Biting Protraction threshold)
-        IF CBI3 is NOT active
-            NOT(Relative Grasper Position is less than B64 Rejection Protraction threshold)
+        IF CBI3 is active (ingestion)
+            IF mechanical stimulation is in grasper (swallowing)
+                NOT (Relative Grasper Position is less than B64 Swallow Retraction threshold)
+            IF mechanical stimulation is NOT in grasper (biting)
+                NOT(Relative Grasper Position is less than B64 Biting Retraction threshold)
+        IF CBI3 is NOT active (rejection)
+            NOT(Relative Grasper Position is less than B64 Rejection Retraction threshold)
     %}
     
-    B64_ProtractionExcitation = (CBI3_last*((mechanical_in_grasper*(position_grasper_relative>B64_thresh_protract_swallowing))||...
-                                           ((~mechanical_in_grasper)*(position_grasper_relative>B64_thresh_protract_biting))))||...
-                               ((~CBI3_last)*(position_grasper_relative>B64_thresh_protract_reject)); % checks  protraction threshold - original 0.5
-                           
-    B64_RetractionInhibition = (CBI3_last*((mechanical_in_grasper*(~(position_grasper_relative<B64_thresh_retract_swallowing)))||...
-                                           ((~mechanical_in_grasper)*(~(position_grasper_relative<B64_thresh_retract_biting)))))||...
-                               ((~CBI3_last)*(~(position_grasper_relative<B64_thresh_retract_reject))); % checks retraction threshold - original 0.5    
-    
+    B64_proprioception = (CBI3_last*(... % checks protraction threshold - original 0.5
+                                    (  mechanical_in_grasper *(position_grasper_relative>B64_thresh_retract_swallowing))||...
+                                    ((~mechanical_in_grasper)*(position_grasper_relative>B64_thresh_retract_biting))))...
+                                ||...
+                                ((~CBI3_last)                *(position_grasper_relative>B64_thresh_retract_reject));
+
     %B64
     avec(9,j+1)=MCC_last*(~B31B32_last)*... % update B64
-        B64_ProtractionExcitation*B64_RetractionInhibition;
+        B64_proprioception;
 
     %% Update B4/B5: 
     %{
@@ -353,14 +355,16 @@ for j=2:(nt-1)
         MCC is ON
         AND
         IF stimulating electrode is off
-            Strongly firing IF CBI3 is NOT active
+            Strongly firing IF CBI3 is NOT active (rejection)
                 AND
-                B64 is active
+                B64 is active (retraction)
                 AND
-                Relative grasper position is greater than 0.2
-            weakly firing IF CBI3 is active
+                Relative grasper position is greater than B4/B5 threshold (early retraction)
+            weakly firing IF CBI3 is active (ingestion)
                 AND
-                B64 is active
+                B64 is active (retraction)
+                AND
+                mechanical stimulation is in grasper (swallowing)
         If stimulating electrode is on
             Activity is set to 2 to designate strong firing
     %}
@@ -372,16 +376,16 @@ for j=2:(nt-1)
                 ((~B4B5_electrode)*... % when B4/B5 electrode is off
                     (2*(~CBI3_last)*...% if egestion
                         B64_last*(position_grasper_relative>B4B5_threshold)) +... 
-                    ((CBI3_last)*(mechanical_in_grasper)*B64_last))... 
+                    ((CBI3_last)*(mechanical_in_grasper)*B64_last))... % if swallowing
         +2*B4B5_electrode; % when B4/B5 electrode is on (and +1) then turn B4/B5 on to "emergency" mode
     
     %% Update B20 - updated 2/27/2020
     % Not active if CB1-3 is on (strongly inhibited)
     %excited by CBI2 but excitation is weaker than inhibition from CBI3
     %{
-    (CBI4 is active
+    (CBI2 is active
         OR	
-        CBI2 is active
+        CBI4 is active
         OR
         B63 (B31/32) is active)
             AND
@@ -390,20 +394,37 @@ for j=2:(nt-1)
             B64 is NOT active
 		
     %}
-    avec(10,j+1) = (~CBI3_last)*((CBI2_last||CBI4_last)||B31B32_last)*(~B64_last);
+    avec(10,j+1) = MCC_last*((CBI2_last||CBI4_last)||B31B32_last)*(~CBI3_last)*(~B64_last);
     
    %% Update B40/B30
     %{
     B40/B30 is active IF
+        MCC is ON
+        AND
         (CBI2 is active
         OR 
         CBI4 is active
         OR 
-        B63 is active)
+        B63 (B31/32) is active)
         AND 
         B64 is not active
     %}
+   
+    % B30/B40 have a fast inhibitory and slow excitatory connection with
+    % B8a/b. To accomodate this, we track when B30/B40 goes from a quiescent
+    % state to a active state and vice versa after calculateing the new
+    % value.
+    
     avec(13,j+1) = MCC_last*((CBI2_last||CBI4_last)||B31B32_last)*(~B64_last);
+    
+    %check if B30/B40 has gone from quiescent to active
+    if((B40B30_last ==0) && (avec(13,j+1)==1))
+       B40B30_onTime = j;
+    end
+    %check if B30/B40 has gone from quiescent to active
+    if((B40B30_last ==1) && (avec(13,j+1)==0))
+       B40B30_offTime = j;
+    end
     
     %% Update B31/B32: -updated 2/27/2020
     % activated if grasper retracted enough, inhibited if
@@ -412,36 +433,37 @@ for j=2:(nt-1)
     B31/B32 is active IF
         MCC is ON
         AND
-        If CBI3 is active
-            B64 is not active
+        IF CBI3 is active (ingestion)
+            B64 is NOT active (protraction)
             AND
-                Graper pressure is less than half of its maximum
+                Graper pressure is less than half of its maximum (open)
                 OR
-                CBI2 is active
+                CBI2 is active (biting)
             AND
-            IF B31/B32 is not firing
+            IF B31/B32 is NOT firing (switching to protraction)
                 The relative grasper position is less than the retraction threshold
-            IF B31/B32 is firing
+            IF B31/B32 is firing (protraction)
                 The relative grasper position is less than the protraction threshold
-        IF CBI3 is NOT active
-            B64 is not active
+        IF CBI3 is NOT active (rejection)
+            B64 is NOT active (protraction)
             AND
-            Grasper Pressure is greater than a quarter of the maximum
+            Grasper Pressure is greater than a quarter of the maximum (closing or closed)
             AND
                 CBI2 is active
                 OR
                 CBI4 is active
             AND
-            IF B31/B32 is not firing
-                The relative grasper position is less than 0.6
-            IF B31/B32 is firing
-                The relative grasper position is less than 0.83
+            IF B31/B32 is NOT firing (switching to protraction)
+                The relative grasper position is less than the retraction threshold
+            IF B31/B32 is firing (protraction)
+                The relative grasper position is less than the protraction threshold
     %}
     
     %B31/B32s thresholds may vary for different behaviors. These are set
     %here
     if (mechanical_in_grasper && CBI3_last) %swallowing
         prot_thresh = B31_thresh_protract_swallow;
+        ret_thresh = B31_thresh_retract_swallow;
     elseif (mechanical_in_grasper && (~CBI3_last)) %rejection
         prot_thresh = B31_thresh_protract_reject;
         ret_thresh = B31_thresh_retract_reject;
@@ -450,31 +472,51 @@ for j=2:(nt-1)
         ret_thresh = B31_thresh_retract_bite;        
     end
 
-    avec(4,j+1)=MCC_last*(CBI3_last*... %if ingestion
-      ((~B64_last)*((GrapserPressure_last<(pmax/2))||CBI2_last)*... 
-      ((~B31B32_last)*(position_grasper_relative<=ret_thresh)+B31B32_last*(position_grasper_relative<prot_thresh)))+...
+    avec(4,j+1)=MCC_last*(...
+        CBI3_last*... %if ingestion
+            ((~B64_last)*((GrapserPressure_last<(pmax/2))||CBI2_last)*... 
+                ((~B31B32_last)*(position_grasper_relative<ret_thresh)+...
+                   B31B32_last *(position_grasper_relative<prot_thresh)))+...
       (~CBI3_last)*... %if egestion
-      ((~B64_last)*(GrapserPressure_last>(pmax/4))*(CBI2_last||CBI4_last)*...
-      ((~B31B32_last)*(position_grasper_relative<ret_thresh)+B31B32_last*(position_grasper_relative<prot_thresh))));
+            ((~B64_last)*(GrapserPressure_last>(pmax/4))*(CBI2_last||CBI4_last)*...
+                ((~B31B32_last)*(position_grasper_relative<ret_thresh)+...
+                   B31B32_last *(position_grasper_relative<prot_thresh))));
              
     %% Update B6/B9/B3: 
-    % activate once pressure is high enough, 
+    % activate once pressure is high enough in ingestion, or low enough in
+    % rejection
     %{
+    OLD VERSION:
     B6/B9/B3 is active IF
         MCC is active
         AND
-        IF CBI3 is active
-            B64 is active
+        IF CBI3 is active (ingestion)
+            B64 is active (retraction)
             AND
-            Grasper pressure is greater than B6/B3/B9 pressure threshold
-        IF CBI3 is not active
-            B64 is active
+            Grasper pressure is greater than B6/B3/B9 pressure threshold (closed)
+        IF CBI3 is not active (rejection)
+            B64 is active (retraction)
             AND
                 B4/B5 is NOT active
                 OR
                 Relative grasper position is less than 0.7
             AND
-            Grasper pressure is less than 0.75 of maximum
+            Grasper pressure is less than 0.75 of maximum (open)
+
+    NEW VERSION:
+    B6/B9/B3 is active IF
+        MCC is active
+        AND
+        B4/B5 is NOT firing strongly
+        AND
+        IF CBI3 is active (ingestion)
+            B64 is active (retraction)
+            AND
+            Grasper pressure is greater than B6/B3/B9 pressure threshold (closed)
+        IF CBI3 is not active (rejection)
+            B64 is active (retraction)
+            AND
+            Grasper pressure is less than B6/B3/B9 pressure threshold (open)
     %}
 
     %B6/B9/B3s thresholds may vary for different behaviors. These are set
@@ -488,24 +530,25 @@ for j=2:(nt-1)
     end
 
     %B6/B9/B3
-%     avec(5,j+1)=MCC_last*((CBI3_last)*... Ingestion / CBI3 inactive
+%     avec(5,j+1)=MCC_last*((CBI3_last)*... Ingestion / CBI3 active
 %        (B64_last)*(GrapserPressure_last>(B6B9B3_pressure_thresh*pmax))...
 %        +...
-%        (~CBI3_last)*...Egestion / CBI3 active
+%        (~CBI3_last)*...Egestion / CBI3 inactive
 %        ((B4B5_last>=2)||((position_grasper_relative)<0.7))*... 
 %        (B64_last)*(GrapserPressure_last<(.75*pmax))); 
 
-    avec(5,j+1)=MCC_last*(~(B4B5_last>=2))*((CBI3_last)*... Ingestion / CBI3 inactive
-       (B64_last)*(GrapserPressure_last>(B6B9B3_pressure_thresh*pmax))...
-       +...
-       (~CBI3_last)*...Egestion / CBI3 active
-       (B64_last)*(GrapserPressure_last<(B6B9B3_pressure_thresh*pmax))); 
+    avec(5,j+1)=MCC_last*(~(B4B5_last>=2))*(...
+        (CBI3_last)*... Ingestion / CBI3 active
+            (B64_last)*(GrapserPressure_last>(B6B9B3_pressure_thresh*pmax))...
+        +...
+        (~CBI3_last)*...Egestion / CBI3 inactive
+            (B64_last)*(GrapserPressure_last<(B6B9B3_pressure_thresh*pmax)));
 
     
     %% Update B8a/b
     % active if excitation from B6/B9/B3 plus protracted
     % sensory feedback exceeds threshold of 1.9, and not inhibited by
-    % either B38 or by sensory feedback from being retracted. If B4/B5 is
+    % either B31/B32 or by sensory feedback from being retracted. If B4/B5 is
     % highly excited (activation level is 2 instead of just 1) then shut
     % down B8a/b.
     %{
@@ -525,12 +568,21 @@ for j=2:(nt-1)
             B31/B32 is NOT active
     %}
     
-    %B8a/b - updated 2/27/2020
-    avec(1,j+1)=MCC_last*(~(B4B5_last>=2))*(...%B4/5 inhibits when strongly active, added min so that can't be below zero
-        CBI3_last*(((B40B30_last||B20_last)||B64_last)*...
-        (B20_last||(~B31B32_last)))+...
-        (~CBI3_last)*((B40B30_last||B64_last)*...
-        (B20_last))); 
+    %B8a/b recieves slow exitatory input from B30/B40 functionally this
+    %causes strong firing immediatly following B30/B40 cessation in biting
+    %and swallowing
+    if(B40B30_last==0 && j<(B40B30_offTime+B40B30_postExcitationDuration))
+       B40B30_excite = 1; 
+    else
+        B40B30_excite = 0; 
+    end
+    
+    %B8a/b - updated 5/21/2020
+      avec(1,j+1)=MCC_last*(~(B4B5_last>=2))*(...%B4/5 inhibits when strongly active
+        CBI3_last*(... % if ingestion
+            B20_last||(B40B30_excite||B64_last)*(~B31B32_last))+...
+        (~CBI3_last)*(... % if rejection
+            B20_last)); 
     
     %% Update B7 - ONLY ACTIVE DURING EGESTION and BITING
     % turn on as you get to peak protraction
@@ -538,11 +590,13 @@ for j=2:(nt-1)
     %biomechanics
     %{
     B7 is active IF
-        The relative position of the grasper is greater than the protraction threshold
+        (The relative position of the grasper is greater than the protraction threshold
+        OR
+        Grasper pressure is very high) (closed)
         AND
-            CBI3 is active
+            CBI3 is NOT active (rejection)
             OR
-            There is NOT mechanical stimulation in mouth
+            There is NOT mechanical stimulation in mouth (biting)
     %}
     if (mechanical_in_grasper && (~CBI3_last)) %rejection
         B7_thresh = B7_thresh_protract_reject;
@@ -558,20 +612,21 @@ for j=2:(nt-1)
     B38 is active IF
         MCC is ON
         AND
-        mechanical stimulation in the grasper
+        mechanical stimulation in the grasper (swallowing or rejection)
         AND
-        IF CBI3 is active
+        IF CBI3 is active (ingestion)
             Relative grasper position is less than B38 ingestion threshold
-        IF CBI3 is not active
+        IF CBI3 is not active (rejection)
             Turn off B38
     %}
     
     %B38
 
-    avec(2,j+1)=MCC_last*((mechanical_in_grasper)*((CBI3_last)*(... % if CBI3 active do the following:
-        ((position_grasper_relative)<B38ingest_thresh))...
+    avec(2,j+1)=MCC_last*((mechanical_in_grasper)*(...
+        (CBI3_last)*(... % if CBI3 active do the following:
+            ((position_grasper_relative)<B38ingest_thresh))...
         +...
-        (~CBI3_last)*0));
+        (~CBI3_last)*0)); % JPG: this could be removed
      
     %% Update Grasper state (open/closed): if B8a/b fires, grasper closes,
     % otherwise it opens.
