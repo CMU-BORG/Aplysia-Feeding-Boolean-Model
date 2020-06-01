@@ -8,7 +8,7 @@
 % in consultation with Jeff Gill, CWRU
 %
 %
-% Last Update: 5/11/2020
+% Last Update: 5/26/2020
 
 function [avec,bvec,cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength)
 
@@ -250,9 +250,9 @@ for j=2:(nt-1)
             (B4/B5 is firing strongly (>=2)))
     %}
 
-    %CBI2 - updated 5/11/2020
+    %CBI2 - updated 5/26/2020
     avec(7,j+1) = (electrode_CBI2==0)*... if electrode above CBI-2 is off, do this:
-        MCC_last*((stimuli_mech_last&&stimuli_chem_last&&(~mechanical_in_grasper))||(mechanical_in_grasper&&(~stimuli_chem_last))||(B4B5_last>=2))+...
+        MCC_last*(~B64_last)*((stimuli_mech_last&&stimuli_chem_last&&(~mechanical_in_grasper))||(mechanical_in_grasper&&(~stimuli_chem_last))||(B4B5_last>=2))+...
         (electrode_CBI2==1);
 
     %% Update CBI-3

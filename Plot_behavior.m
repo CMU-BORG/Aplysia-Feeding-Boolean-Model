@@ -1,20 +1,20 @@
 function Plot_behavior(t,avec,bvec,cvec,label,xlimits)
-figure('Position', [10 10 500 800])
+figure('Position', [10 10 800 975])
 set(gcf,'Color','white')
 %xl=16+[-1 1]; % zoom in on t=19 (for V012, when B20 starts)
 %xl=12.5+[-1 1]; % for V013, zoom in on time when B4/B5 is stimulated
 xl=xlimits; % show full time scale
 ymin = 0;
-ymax = 2;
-shift = 0.05;
-top = 0.9;
+ymax = 1;
+shift = 0.045;
+top = 0.95;
 i=0;
 left = 0.25;
 width = 0.7;
 height = 0.025;
 
 %CBI-s and MCC
-subplot(13,1,1)
+subplot(15,1,1)
 % plot(t,avec(6,:),'k','LineWidth',2) % MCC
 % set(gca,'Position',[left top-i*shift width height])
 % i=i+1;
@@ -31,23 +31,57 @@ subplot(13,1,1)
 
 %External Stimuli
 %subplot(15,1,1)
-subplot('position',[left top width height*2.5])
+subplot('position',[left top width height])
 i=i+1;
-plot(t,cvec(6,:)*0.75+2, 'Color', [56/255, 232/255, 123/255],'LineWidth',2) %mechanical in grasper
+plot(t,cvec(6,:), 'Color', [56/255, 232/255, 123/255],'LineWidth',2) %mechanical in grasper
 %pos = get(gca,'Position');
 %set(gca,'Position',[pos(1)+0.1 pos(2) pos(3)-0.1 pos(4)*2])
-hold on
-plot(t,cvec(3,:)*0.75+1, 'Color', [70/255, 84/255, 218/255],'LineWidth',2) %chemical at lips
-plot(t,cvec(7,:)*0.75, 'Color', [47/255, 195/255, 241/255],'LineWidth',2) %mechanical at lips
-hold off
 set(gca,'FontSize',16)
-legend({'Mech. in Grapser', 'Chem. at Lips', 'Mech. at Lips'},'Orientation','horizontal','Box','off','Position',[0.339642123669817,0.965429403202328,0.364074321139376,0.031659387832906],'FontSize',12)
+%legend({'Mech. in Grapser'},'Orientation','horizontal','Box','off','Position',[0.339642123669817,0.965429403202328,0.364074321139376,0.031659387832906],'FontSize',12)
 
 set(gca,'xtick',[])
-set(gca,'ytick',[0,1,2])
+set(gca,'ytick',[0,1])
 set(gca,'YTickLabel',[]);
-ylabel('Stimuli')
-ylim([0 3])
+ylabel('Mech. in Grapser')
+ylim([0 1])
+grid on
+%ylim([ymin ymax])
+xlim(xl)
+ hYLabel = get(gca,'YLabel');
+ set(hYLabel,'rotation',0,'VerticalAlignment','middle','HorizontalAlignment','right','Position',get(hYLabel,'Position')-[0.05 0 0])
+
+set(gca,'XColor','none')
+
+subplot('position',[left top-i*shift width height])
+i=i+1;
+plot(t,cvec(3,:), 'Color', [70/255, 84/255, 218/255],'LineWidth',2) %chemical at lips
+set(gca,'FontSize',16)
+%legend({'Chem. at Lips'},'Orientation','horizontal','Box','off','Position',[0.339642123669817,0.965429403202328,0.364074321139376,0.031659387832906],'FontSize',12)
+
+set(gca,'xtick',[])
+set(gca,'ytick',[0,1])
+set(gca,'YTickLabel',[]);
+ylabel('Chem. at Lips')
+ylim([0 1])
+grid on
+%ylim([ymin ymax])
+xlim(xl)
+ hYLabel = get(gca,'YLabel');
+ set(hYLabel,'rotation',0,'VerticalAlignment','middle','HorizontalAlignment','right','Position',get(hYLabel,'Position')-[0.05 0 0])
+
+set(gca,'XColor','none')
+
+subplot('position',[left top-i*shift width height])
+i=i+1;
+plot(t,cvec(7,:), 'Color', [47/255, 195/255, 241/255],'LineWidth',2) %mechanical at lips
+set(gca,'FontSize',16)
+%legend({'Mech. at Lips'},'Orientation','horizontal','Box','off','Position',[0.339642123669817,0.965429403202328,0.364074321139376,0.031659387832906],'FontSize',12)
+
+set(gca,'xtick',[])
+set(gca,'ytick',[0,1])
+set(gca,'YTickLabel',[]);
+ylabel('Mech. at Lips')
+ylim([0 1])
 grid on
 %ylim([ymin ymax])
 xlim(xl)
@@ -64,6 +98,7 @@ plot(t,avec(7,:),'k','LineWidth',2) % CBI2
 i=i+1;
 set(gca,'FontSize',16)
 set(gca,'xtick',[])
+set(gca,'ytick',[0,1])
 set(gca,'YTickLabel',[]);
 ylabel('CBI-2')
 %grid on
@@ -82,6 +117,7 @@ plot(t,avec(8,:),'k','LineWidth',2) % CBI3
 i=i+1;
 set(gca,'FontSize',16)
 set(gca,'xtick',[])
+set(gca,'ytick',[0,1])
 set(gca,'YTickLabel',[]);
 ylabel('CBI-3')
 %grid on
@@ -99,6 +135,7 @@ plot(t,avec(12,:),'k','LineWidth',2) % CBI4
 i=i+1;
 set(gca,'FontSize',16)
 set(gca,'xtick',[])
+set(gca,'ytick',[0,1])
 set(gca,'YTickLabel',[]);
 ylabel('CBI-4')
 %grid on
@@ -117,6 +154,7 @@ plot(t,avec(9,:),'LineWidth',2, 'Color',[90/255, 131/255, 198/255]) % B64
 i=i+1;
 set(gca,'FontSize',16)
 set(gca,'xtick',[])
+set(gca,'ytick',[0,1])
 set(gca,'YTickLabel',[]);
 ylabel('B64', 'Color',[90/255, 131/255, 198/255])
 %grid on
@@ -135,6 +173,7 @@ plot(t,avec(10,:),'LineWidth',2, 'Color',[44/255, 166/255, 90/255]) % B20
 i=i+1;
 set(gca,'FontSize',16)
 set(gca,'xtick',[])
+set(gca,'ytick',[0,1])
 set(gca,'YTickLabel',[]);
 ylabel('B20', 'Color',[44/255, 166/255, 90/255])
 %grid on
@@ -149,9 +188,10 @@ subplot('position',[left top-i*shift width height])
 plot(t,avec(13,:),'LineWidth',2, 'Color',[192/255, 92/255, 185/255]) % B40/B30
 %pos = get(gca,'Position');
 %set(gca,'Position',[pos(1)+0.1 pos(2) pos(3)-0.1 pos(4)])
-i=i+1;
+i=i+1.5;
 set(gca,'FontSize',16)
 set(gca,'xtick',[])
+set(gca,'ytick',[0,1])
 set(gca,'YTickLabel',[]);
 ylabel('B40/B30', 'Color',[192/255, 92/255, 185/255])
 %grid on
@@ -162,17 +202,18 @@ xlim(xl)
  set(gca,'XColor','none')
 
 %subplot(15,1,8)
-subplot('position',[left top-i*shift width height])
+subplot('position',[left top-i*shift width height*2])
 plot(t,avec(3,:),'LineWidth',2, 'Color', [51/255, 185/255, 135/255]) % B4/5
 %pos = get(gca,'Position');
 %set(gca,'Position',[pos(1)+0.1 pos(2) pos(3)-0.1 pos(4)])
 i=i+1;
 set(gca,'FontSize',16)
 set(gca,'xtick',[])
+set(gca,'ytick',[0,1,2])
 set(gca,'YTickLabel',[]);
 ylabel('B4/B5', 'Color', [51/255, 185/255, 135/255])
 %grid on
-ylim([ymin ymax])
+ylim([ymin 2])
 xlim(xl)
  hYLabel = get(gca,'YLabel');
  set(hYLabel,'rotation',0,'VerticalAlignment','middle','HorizontalAlignment','right','Position',get(hYLabel,'Position')-[0.05 0 0])
@@ -189,6 +230,7 @@ plot(t,avec(4,:),'LineWidth',2, 'Color', [220/255, 81/255, 81/255]) % I2 input
 i=i+1;
 set(gca,'FontSize',16)
 set(gca,'xtick',[])
+set(gca,'ytick',[0,1])
 set(gca,'YTickLabel',[]);
 ylabel('B31/B32','Color',[220/255, 81/255, 81/255])
 %grid on
@@ -208,6 +250,7 @@ plot(t,avec(1,:),'LineWidth',2, 'Color', [213/255, 155/255, 196/255]) % B8a/b
 i=i+1;
 set(gca,'FontSize',16)
 set(gca,'xtick',[])
+set(gca,'ytick',[0,1])
 set(gca,'YTickLabel',[]);
 ylabel('B8a/b', 'Color', [213/255, 155/255, 196/255])
 %grid on
@@ -225,6 +268,7 @@ plot(t,avec(2,:),'LineWidth',2, 'Color', [238/255, 191/255, 70/255]) % B38
 i=i+1;
 set(gca,'FontSize',16)
 set(gca,'xtick',[])
+set(gca,'ytick',[0,1])
 set(gca,'YTickLabel',[]);
 ylabel('B38', 'Color', [238/255, 191/255, 70/255])
 %grid on
@@ -242,6 +286,7 @@ plot(t,avec(5,:),'LineWidth',2, 'Color', [90/255, 155/255, 197/255]) % B6/9/3
 i=i+1;
 set(gca,'FontSize',16)
 set(gca,'xtick',[])
+set(gca,'ytick',[0,1])
 set(gca,'YTickLabel',[]);
 ylabel('B6/B9/B3', 'Color', [90/255, 155/255, 197/255])
 %grid on
@@ -260,6 +305,7 @@ plot(t,avec(11,:),'LineWidth',2, 'Color', [56/255, 167/255, 182/255]) % B7
 i=i+2.5;
 set(gca,'FontSize',16)
 set(gca,'xtick',[])
+set(gca,'ytick',[0,1])
 set(gca,'YTickLabel',[]);
 ylabel('B7', 'Color', [56/255, 167/255, 182/255])
 %grid on
@@ -269,7 +315,55 @@ xlim(xl)
  set(hYLabel,'rotation',0,'VerticalAlignment','middle','HorizontalAlignment','right','Position',get(hYLabel,'Position')-[0.05 0 0])
  set(gca,'XColor','none')
  
- %Grasper Motion
+ 
+ %Determine locations of protraction retraction boxes
+ tstep = t(2)-t(1);
+ startnum = xl(1)/tstep
+ endnum = xl(2)/tstep
+ grasper_rel_pos = (bvec(6,:)-bvec(8,:));
+ numProtractionBoxes = 0;
+ numRetractionBoxes = 0;
+ protraction = 1;
+ protractionRectangles=[0,0];
+ retractionRectangles=[0,0];
+ for ind=startnum:endnum
+    if grasper_rel_pos(ind) > grasper_rel_pos(ind-1)
+        %protraction
+        if(protraction == 0)
+            numProtractionBoxes=numProtractionBoxes+1;
+            protraction = 1;
+            %end the last retractionrectangle
+            if(numRetractionBoxes>0)
+                retractionRectangles(numRetractionBoxes,2) = ind;
+            end
+            %start a new protractionrectangle
+            protractionRectangles(numProtractionBoxes,1) = ind;
+        end
+    else
+        %retraction
+        if(protraction == 1)
+            numRetractionBoxes=numRetractionBoxes+1;
+            protraction = 0;
+            %end the last retractionrectangle            
+            retractionRectangles(numRetractionBoxes,1) = ind;
+            %start a new protractionrectangle
+            if(numProtractionBoxes>0)
+                protractionRectangles(numProtractionBoxes,2) = ind; 
+            end
+        end     
+    end
+ end
+ 
+ if retractionRectangles(end,2) ==0
+     retractionRectangles(end,2) = endnum;
+ end
+ 
+ if protractionRectangles(end,2) ==0
+     protractionRectangles(end,2) = endnum;
+ end
+ 
+ 
+%Grasper Motion
 %subplot(15,1,14)
 subplot('position',[left top-i*shift width height*3.5])
 plot(t,(bvec(6,:)-bvec(8,:)),'b','LineWidth',2)
@@ -285,9 +379,42 @@ ylabel({'Grasper';'Motion'}, 'Color', [0/255, 0/255, 255/255])
 ylim([ymin 1.5])
 xlim(xl)
 set(gca,'XColor','none')
- hYLabel = get(gca,'YLabel');
- set(hYLabel,'rotation',0,'VerticalAlignment','middle','HorizontalAlignment','right','Position',get(hYLabel,'Position')-[0.05 0 0])
- set(gca,'XColor','none')
+hYLabel = get(gca,'YLabel');
+set(hYLabel,'rotation',0,'VerticalAlignment','middle','HorizontalAlignment','right','Position',get(hYLabel,'Position')-[0.05 0 0])
+set(gca,'XColor','none')
+
+positionAxesCell = get(gca,{'Position'});
+positionAxes = positionAxesCell{1};
+leftAxes = positionAxes(1)
+widthAxes = positionAxes(3)
+bottomAxes = positionAxes(2)+positionAxes(4)
+
+hold on
+for retract = 1:length(retractionRectangles)
+h=rectangle('Position', [retractionRectangles(retract,1)*tstep 1.25 (retractionRectangles(retract,2)-retractionRectangles(retract,1))*tstep 0.1]);  
+h.FaceColor = 'black';
+end
+hold off
+
+hold on
+for protract = 1:length(protractionRectangles)
+h=rectangle('Position', [protractionRectangles(protract,1)*tstep 1.25 (protractionRectangles(protract,2)-protractionRectangles(protract,1))*tstep 0.1]);  
+h.FaceColor = 'white';
+end
+hold off
+
+
+% for retract = 1:length(retractionRectangles)
+% h=annotation(gcf,'rectangle',...
+%     [retractionRectangles(retract,1) bottomAxes retractionRectangles(retract,2)-leftAxes 0.01]);  
+% h.FaceColor = 'black';
+% end
+% for protract = 1:length(protractionRectangles)
+% h=annotation(gcf,'rectangle',...
+%     [(protractionRectangles(protract,1)-startnum)*scale+leftAxes bottomAxes (protractionRectangles(protract,2)-startnum)*widthAxes/(endnum-startnum) 0.01]);  
+% h.FaceColor = 'white';
+% end
+
 
 
 %subplot(15,1,15)

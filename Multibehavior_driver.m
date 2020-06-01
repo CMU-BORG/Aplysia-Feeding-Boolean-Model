@@ -2,7 +2,7 @@ close all
 clear all
 
 %% Specify label suffix for saving figures
-suffix = '5_25_2020';
+suffix = '5_31_2020';
 
 %% Set simulation parameters
 params{1,1} = .05; %dt Time units in seconds
@@ -36,7 +36,7 @@ params{22,1} = 0.2; %Maximum hinge force
 
 thresholds{1,1} = 0.75; %Prot_thresh threshold for having reached sufficient protraction - original 0.8
 thresholds{2,1} = 0.4; %ret_thresh threshold for having reached sufficient retraction - original 0.4
-thresholds{3,1} = 0.5; % threshold for activing B38 when B20 is silent (retraction/ingestion)
+thresholds{3,1} = 0.48; % threshold for activing B38 when B20 is silent (retraction/ingestion)
 thresholds{4,1} = 0.4; % threshold for activing B38 when B20 is active (protraction/egestion)
 thresholds{5,1} = 0.9; %B64_thresh_retract_biting
 thresholds{6,1} = 0.5; %B64_thresh_retract_swallowing 
@@ -100,6 +100,7 @@ i = 1;
 figure
 set(gcf,'Color','white')
 for seaweed_strength = seaweed_strength_min:step_size:seaweed_strength_max
+    
     chemicalAtLips = ones(1,nt);
     mechanicalAtLips = ones(1,nt);
     mechanicalInGrasper = ones(1,nt);
@@ -120,6 +121,78 @@ for seaweed_strength = seaweed_strength_min:step_size:seaweed_strength_max
     set(gca,'YGrid','off')
     %ylim([-2 2.1])
     xlim(xlimits)
+    
+    if (seaweed_strength == seaweed_strength_min || seaweed_strength == seaweed_strength_max)
+        %Determine locations of protraction retraction boxes
+         tstep = t(2)-t(1);
+         startnum = xlimits(1)/tstep
+         endnum = xlimits(2)/tstep
+         grasper_rel_pos = (swallow_bvec2(6,:)-swallow_bvec2(8,:));
+         numProtractionBoxes = 0;
+         numRetractionBoxes = 0;
+         protraction = 1;
+         protractionRectangles=[0,0];
+         retractionRectangles=[0,0];
+         for ind=startnum:endnum
+            if grasper_rel_pos(ind) > grasper_rel_pos(ind-1)
+                %protraction
+                if(protraction == 0)
+                    numProtractionBoxes=numProtractionBoxes+1;
+                    protraction = 1;
+                    %end the last retractionrectangle
+                    if(numRetractionBoxes>0)
+                        retractionRectangles(numRetractionBoxes,2) = ind;
+                    end
+                    %start a new protractionrectangle
+                    protractionRectangles(numProtractionBoxes,1) = ind;
+                end
+            else
+                %retraction
+                if(protraction == 1)
+                    numRetractionBoxes=numRetractionBoxes+1;
+                    protraction = 0;
+                    %end the last retractionrectangle            
+                    retractionRectangles(numRetractionBoxes,1) = ind;
+                    %start a new protractionrectangle
+                    if(numProtractionBoxes>0)
+                        protractionRectangles(numProtractionBoxes,2) = ind; 
+                    end
+                end     
+            end
+         end
+
+         if retractionRectangles(end,2) ==0
+             retractionRectangles(end,2) = endnum;
+         end
+
+         if protractionRectangles(end,2) ==0
+             protractionRectangles(end,2) = endnum;
+         end 
+         
+         positionAxesCell = get(gca,{'Position'});
+        positionAxes = positionAxesCell{1};
+        leftAxes = positionAxes(1)
+        widthAxes = positionAxes(3)
+        bottomAxes = positionAxes(2)+positionAxes(4)
+
+        hold on
+        for retract = 1:length(retractionRectangles)
+        h=rectangle('Position', [retractionRectangles(retract,1)*tstep 1 (retractionRectangles(retract,2)-retractionRectangles(retract,1))*tstep 0.1]);  
+        h.FaceColor = 'black';
+        end
+        hold off
+
+        hold on
+        for protract = 1:length(protractionRectangles)
+        h=rectangle('Position', [protractionRectangles(protract,1)*tstep 1 (protractionRectangles(protract,2)-protractionRectangles(protract,1))*tstep 0.1]);  
+        h.FaceColor = 'white';
+        end
+        hold off
+    end
+    
+    if (seaweed_strength ~= seaweed_strength_max)
+        set(gca,'XTickLabel',[]);
+    end
     i=i+1;
 end
 xlabel('Time (s)')
