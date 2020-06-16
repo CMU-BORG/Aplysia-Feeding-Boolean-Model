@@ -1,17 +1,18 @@
-function Plot_behavior(t,avec,bvec,cvec,label,xlimits)
-figure('Position', [10 10 800 975])
+function figure1 = Plot_behavior(t,avec,bvec,cvec,label,xlimits,pmax,params)
+figure('Position', [10 10 800 1000])
 set(gcf,'Color','white')
+figure1 = gcf;
 %xl=16+[-1 1]; % zoom in on t=19 (for V012, when B20 starts)
 %xl=12.5+[-1 1]; % for V013, zoom in on time when B4/B5 is stimulated
 xl=xlimits; % show full time scale
 ymin = 0;
 ymax = 1;
-shift = 0.045;
+shift = 0.04;
 top = 0.95;
 i=0;
 left = 0.25;
 width = 0.7;
-height = 0.025;
+height = 0.02;
 
 %CBI-s and MCC
 subplot(15,1,1)
@@ -42,7 +43,7 @@ set(gca,'FontSize',16)
 set(gca,'xtick',[])
 set(gca,'ytick',[0,1])
 set(gca,'YTickLabel',[]);
-ylabel('Mech. in Grapser')
+ylabel('Mech. in Grasper')
 ylim([0 1])
 grid on
 %ylim([ymin ymax])
@@ -318,8 +319,8 @@ xlim(xl)
  
  %Determine locations of protraction retraction boxes
  tstep = t(2)-t(1);
- startnum = xl(1)/tstep
- endnum = xl(2)/tstep
+ startnum = round(xl(1)/tstep)
+ endnum = round(xl(2)/tstep)
  grasper_rel_pos = (bvec(6,:)-bvec(8,:));
  numProtractionBoxes = 0;
  numRetractionBoxes = 0;
@@ -363,10 +364,55 @@ xlim(xl)
  end
  
  
+%Muscles and Forces
+buccalM_K = params{13,1}; % spring constant representing boddy from buccal mass to ground
+buccalM_rest = params{14,1}; % resting position of body
+grasper_K = params{23,1}; % spring constant representing boddy from buccal mass to ground
+grasper_rest = params{24,1}; % resting position of body
+subplot('position',[left top-i*shift width height*3.5])
+I2 = bvec(4,:);
+I3 = bvec(3,:);
+hinge = bvec(12,:);
+position_grasper_relative = bvec(6,:)-bvec(8,:);
+pinch = bvec(9,:).*min(max((1-(position_grasper_relative).^2),0),1);
+headspring = -(buccalM_rest-bvec(8,:))*buccalM_K;
+grasperspring = -(grasper_rest-position_grasper_relative)*grasper_K;
+pressure = bvec(2,:)/pmax;
+%scaled_spring = spring.*pressure;
+
+hold on
+plot(t,I2,'LineWidth',2,'Color', [220/255, 81/255, 81/255])
+plot(t,I3,'LineWidth',2,'Color', [90/255, 155/255, 197/255])
+plot(t,hinge,'LineWidth',2, 'Color', [56/255, 167/255, 182/255])
+plot(t,pinch,'LineWidth',2, 'Color', [238/255, 191/255, 70/255])
+plot(t,headspring,'k','LineWidth',2)
+plot(t,grasperspring,'--k','LineWidth',2)
+plot(t,pressure,'LineWidth',2, 'Color', [213/255, 155/255, 196/255])
+%plot(t,scaled_spring,'--k','LineWidth',2)
+hold off
+
+i=i+2.5;
+xlim(xl)
+
+
+ 
 %Grasper Motion
 %subplot(15,1,14)
 subplot('position',[left top-i*shift width height*3.5])
-plot(t,(bvec(6,:)-bvec(8,:)),'b','LineWidth',2)
+grasper_motion = (bvec(6,:)-bvec(8,:));
+grasper_pressure = bvec(18,:);
+idx = grasper_pressure >=1;%pmax*0.6;
+idy = grasper_pressure <1;%pmax*0.6;
+
+grasper_motion_pressure(idx) = grasper_motion(idx);
+grasper_motion_pressure(idy)=NaN;
+
+plot(t,grasper_motion_pressure,'b','LineWidth',4)
+hold on
+plot(t,grasper_motion,'b','LineWidth',2)
+hold off
+
+
 %pos = get(gca,'Position')
 %[pos(1)+0.1 pos(2)-0.017 pos(3)-0.1 pos(4)*1.5]
 %set(gca,'Position',[pos(1)+0.1 pos(2)-0.017 pos(3)-0.1 pos(4)*1.5])
@@ -415,11 +461,30 @@ hold off
 % h.FaceColor = 'white';
 % end
 
+% spearate kinetic and static friction
+idx = bvec(18,:) >=1;%pmax*0.6;
+idy = bvec(18,:) <1;%pmax*0.6;
 
+grasper_friction(idx) = bvec(20,idx);
+grasper_friction(idy)=NaN;
+
+jdx = bvec(19,:) >=1;%pmax*0.6;
+jdy = bvec(19,:) <1;%pmax*0.6;
+
+pinch_friction(jdx) = bvec(21,jdx);
+pinch_friction(jdy)=NaN;
 
 %subplot(15,1,15)
 subplot('position',[left top-i*shift width height*3.5])
+
+
+plot(t,bvec(20,:),'LineWidth',2, 'Color', [213/255, 155/255, 196/255])
+hold on
+plot(t,grasper_friction,'LineWidth',4, 'Color', [213/255, 155/255, 196/255])
+plot(t,bvec(21,:),'LineWidth',2, 'Color', [238/255, 191/255, 70/255])
+plot(t,pinch_friction,'LineWidth',4, 'Color', [238/255, 191/255, 70/255])
 plot(t,bvec(7,:),'k','LineWidth',2)
+hold off
 yticks([-1 0 1])
 yticklabels({'','0',''})
 %pos = get(gca,'Position')
@@ -430,7 +495,7 @@ set(gca,'FontSize',16)
 set(gca,'xtick',[])
 ylabel('Force', 'Color', [0/255, 0/255, 0/255])
 %grid on
-ylim([-1 1])
+%ylim([-0.5 0.5])
 xlim(xl)
 set(gca,'XColor','none')
  hYLabel = get(gca,'YLabel');

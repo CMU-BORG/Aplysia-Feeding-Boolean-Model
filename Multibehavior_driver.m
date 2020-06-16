@@ -2,12 +2,12 @@ close all
 clear all
 
 %% Specify label suffix for saving figures
-suffix = '5_31_2020';
+suffix = '_wout_hypothesized_6_11_2020';
 
 %% Set simulation parameters
 params{1,1} = .05; %dt Time units in seconds
 params{2,1} =0; %t0
-tmax=50; % Basic period should be about 5 sec.
+tmax=50; % in seconds Basic period should be about 5 sec.
 params{3,1}=tmax; %tmax Basic period should be about 5 sec.
 t=params{2,1}:params{1,1}:params{3,1};
 nt=length(t); % number of time points
@@ -24,12 +24,12 @@ params{11,1} = 0.01; %prot_pas passive protractive force - original 0.01
 params{12,1} = 0.015; %retr_pas passive retractive force - original 0.015
 params{13,1} = 1.0; %buccalM_K spring constant representing boddy from buccal mass to ground
 params{14,1} = 0.0; %buccalM_rest resting position of body
-params{15,1} = .15; %F_pinch pinch force, original 0.15params{18,1} = 1.0; %
+params{15,1} = .1; %F_pinch pinch force, original 0.15params{18,1} = 1.0; % in the animal this is ~10-15 mN
 params{16,1} = 1; % force scaler
 params{17,1} = 0.1; %gap influence of CBI2-CBI3 gap junction on a scale of 0 to 1.  Not used yet...
-params{18,1} = 150; %CBI3 refractory period duration
-params{19,1} = 3000; %B40B30 post activity B8 Excitation Duration (Duration based on Jing et al. 2004)
-params{20,1} = 1; %Maximum I3 force
+params{18,1} = 5000; %CBI3 refractory period duration in ms
+params{19,1} = 3000; %B40B30 post activity B8 Excitation Duration (Duration based on Jing et al. 2004) in ms
+params{20,1} = 1; %Maximum I3 force In this animal this is ~150-300 mN
 params{21,1} = 1; %Maximum I2 force
 params{22,1} = 0.2; %Maximum hinge force
 
@@ -59,6 +59,8 @@ thresholds{22,1} = 0.75; %B6B9B3_pressure_thresh_reject
 
 
 
+modulation{1,1} = 0.5;%I2_tau_ingestion;
+modulation{2,1} = 1.4;%I2_tau_egestion;
     
 seaweed_strength = 10;
 
@@ -70,31 +72,55 @@ stim=zeros(13,nt);
 chemicalAtLips = ones(1,nt);
 mechanicalAtLips = ones(1,nt);
 mechanicalInGrasper = zeros(1,nt);
-[bite_avec,bite_bvec,bite_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
+[bite_avec,bite_bvec,bite_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength);
 
-Plot_behavior(t,bite_avec,bite_bvec,bite_cvec,['Bite_' suffix],xlimits)
+Plot_behavior(t,bite_avec,bite_bvec,bite_cvec,['Bite_' suffix],xlimits,params{4,1},params)
 
 %% Swallowing
 chemicalAtLips = ones(1,nt);
 mechanicalAtLips = ones(1,nt);
 mechanicalInGrasper = ones(1,nt);
-[swallow_avec,swallow_bvec,swallow_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
+[swallow_avec,swallow_bvec,swallow_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength);
 
-Plot_behavior(t,swallow_avec,swallow_bvec,swallow_cvec,['Swallow_' suffix],xlimits)
+Plot_behavior(t,swallow_avec,swallow_bvec,swallow_cvec,['Swallow_' suffix],xlimits,params{4,1},params)
+
+%plot close up of grasper motion and force for swallowing
+%Grasper Motion
+figure
+subplot(2,1,1)
+set(gcf,'Color','white')
+hold on
+plot(t,(swallow_bvec(6,:)-swallow_bvec(8,:)),'b','LineWidth',2)
+hold off
+set(gca,'FontSize',16)
+ylabel('Grasper Motion')
+grid on
+xlim([10 20])
+
+%Force
+subplot(2,1,2)
+set(gcf,'Color','white')
+hold on
+plot(t,swallow_bvec(7,:),'k','LineWidth',2)
+hold off
+set(gca,'FontSize',16)
+ylabel('Force')
+grid on
+xlim([10 20])
 
 %% Rejection
 chemicalAtLips = zeros(1,nt);
 mechanicalAtLips = ones(1,nt);
 mechanicalInGrasper = ones(1,nt);
-[reject_avec,reject_bvec,reject_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
+[reject_avec,reject_bvec,reject_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength);
 
-Plot_behavior(t,reject_avec,reject_bvec,reject_cvec,['Reject_' suffix],xlimits)
+Plot_behavior(t,reject_avec,reject_bvec,reject_cvec,['Reject_' suffix],xlimits,params{4,1},params)
 
 %% Multifunctional swallowing of different strength seaweeds
 seaweed_strength_min = 0.1;
 seaweed_strength_max = 0.5;
 step_size = 0.1;
-num_strengths = (seaweed_strength_max-seaweed_strength_min)/step_size+1;
+num_strengths = round((seaweed_strength_max-seaweed_strength_min)/step_size+1);
 i = 1;
 
 figure
@@ -104,7 +130,7 @@ for seaweed_strength = seaweed_strength_min:step_size:seaweed_strength_max
     chemicalAtLips = ones(1,nt);
     mechanicalAtLips = ones(1,nt);
     mechanicalInGrasper = ones(1,nt);
-    [swallow_avec2,swallow_bvec2,swallow_cvec2] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
+    [swallow_avec2,swallow_bvec2,swallow_cvec2] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength);
     
     seaweed_strength_result{i,:} = {seaweed_strength,swallow_avec2,swallow_bvec2,swallow_cvec2};
     
@@ -121,6 +147,9 @@ for seaweed_strength = seaweed_strength_min:step_size:seaweed_strength_max
     set(gca,'YGrid','off')
     %ylim([-2 2.1])
     xlim(xlimits)
+    ylabel('Amplitude')
+    set(gca,'ytick',[0 1]);
+    set(gca,'YTickLabel',[0 1]);
     
     if (seaweed_strength == seaweed_strength_min || seaweed_strength == seaweed_strength_max)
         %Determine locations of protraction retraction boxes
@@ -208,9 +237,9 @@ mechanicalAtLips = ones(1,nt);
 mechanicalInGrasper = ones(1,nt);
 stim=zeros(13,nt);
 seaweed_strength = 10;
-[swallowToReject_avec,swallowToReject_bvec,swallowToReject_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
+[swallowToReject_avec,swallowToReject_bvec,swallowToReject_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength);
 
-Plot_behavior(t,swallowToReject_avec,swallowToReject_bvec,swallowToReject_cvec,['SwallowToReject_' suffix],xlimits)
+Plot_behavior(t,swallowToReject_avec,swallowToReject_bvec,swallowToReject_cvec,['SwallowToReject_' suffix],xlimits,params{4,1},params)
 
 %% Biting to swallowing
 t_switch = 19.01;
@@ -222,17 +251,17 @@ mechanicalInGrasper = zeros(1,nt);
 mechanicalInGrasper(1,step_switch:nt) = ones(1,length(step_switch:nt));
 stim=zeros(13,nt);
 seaweed_strength = 10;
-[biteToSwallow_avec,biteToSwallow_bvec,biteToSwallow_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
+[biteToSwallow_avec,biteToSwallow_bvec,biteToSwallow_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength);
 
-Plot_behavior(t,biteToSwallow_avec,biteToSwallow_bvec,biteToSwallow_cvec,['BiteToSwallow_' suffix],xlimits)
+Plot_behavior(t,biteToSwallow_avec,biteToSwallow_bvec,biteToSwallow_cvec,['BiteToSwallow_' suffix],xlimits,params{4,1},params)
 
 %% B4/B5 Stimulation
 % create stimulation pattern
+tstep = params{1,1};
 stim=zeros(13,nt);
 t_transitionidx_1 = 250; % start stimulating B4/B5
-t_transitionidx_2 = 360; % start stimulating CBI2 in addition to B4/B5
-t_transition_B4duration = 50;
-stim(3,1:nt) = zeros(1,nt); % turn on extracellular stimulation of B4/B5
+t_transition_B4duration = 1/tstep; % in timesteps
+stim(3,1:nt) = zeros(1,nt); % initialize extracellular stimulation of B4/B5
 stim(3,t_transitionidx_1:(t_transitionidx_1+t_transition_B4duration)) = ones(1,length(stim(3,t_transitionidx_1:(t_transitionidx_1+t_transition_B4duration))));
 stim(3,(t_transitionidx_1+t_transition_B4duration):end) = zeros(1,length(stim(3,(t_transitionidx_1+t_transition_B4duration):end)));
 
@@ -240,10 +269,32 @@ chemicalAtLips = ones(1,nt);
 mechanicalAtLips = ones(1,nt);
 mechanicalInGrasper = ones(1,nt);
 seaweed_strength = 10;
-[B4B5stim_avec,B4B5stim_bvec,B4B5stim_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,stim,seaweed_strength);
+[B4B5stim_avec,B4B5stim_bvec,B4B5stim_cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength);
 
-xlimits = [2 t_transition_B4duration];
-Plot_behavior(t,B4B5stim_avec,B4B5stim_bvec,B4B5stim_cvec,['B4B5stim_' suffix],xlimits)
+xlimits = [5 40];
+figure1 = Plot_behavior(t,B4B5stim_avec,B4B5stim_bvec,B4B5stim_cvec,['B4B5stim_' suffix],xlimits,params{4,1},params)
+% Create rectangle
+totalwidth = 0.7;
+totaltime = xlimits(2)-xlimits(1);
+left = (t_transitionidx_1*tstep-xlimits(1))*totalwidth/totaltime+0.25;
+width = t_transition_B4duration*tstep*totalwidth/totaltime;
+bottom = 0.0738461538461538;
+height = 0.768205128205128;
+annotation(figure1,'rectangle',...
+    [left bottom width height],...
+    'Color',[0.635294139385223 0.0784313753247261 0.184313729405403],...
+    'FaceColor',[1 0 0],...
+    'FaceAlpha',0.25);
+
+% Create rectangle
+CBI3_refractory_duration = params{18,1}/1000/tstep;
+left = left+width;
+width = (CBI3_refractory_duration*tstep)*totalwidth/totaltime;
+annotation(figure1,'rectangle',...
+    [left bottom width height],...
+    'Color',[0 0.450980392156863 0.741176470588235],...
+    'FaceColor',[0.301960784313725 0.749019607843137 0.929411764705882],...
+    'FaceAlpha',0.25);
 
 
 %% Plotting swallowing vs. rejection vs. biting

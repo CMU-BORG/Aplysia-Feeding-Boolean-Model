@@ -10,7 +10,7 @@
 %
 % Last Update: 5/26/2020
 
-function [avec,bvec,cvec] = Aplysia_boolean_model(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength)
+function [avec,bvec,cvec] = Aplysia_boolean_model_withfriction(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength, object_fixation)
 
 
 %% Preallocate arrays
@@ -21,7 +21,7 @@ t=t0:dt:tmax;
 nt=length(t); % number of time points
 
 na_units=13; % dimension of neural representation
-nb_units=17; % dimension of body representation
+nb_units=21; % dimension of body representation
 nc_units=7; % dimension of "external world" representation
 
 avec=zeros(na_units,nt);
@@ -90,11 +90,15 @@ force_scaler = params{16,1}; %
 gap = params{17,1}; % influence of CBI2-CBI3 gap junction on a scale of 0 to 1.  Not used yet...
 CBI3_refractoryDuration = params{18,1}/1000/dt; %converted to timesteps
 B40B30_postExcitationDuration = params{19,1}/1000/dt;
-
-
 max_I3 = params{20,1}; %Maximum I3 force
 max_I2 = params{21,1}; %Maximum I2 force
 max_hinge = params{22,1}; %Maximum hinge force
+grasperSpring_K = params{23,1}; %grasperSpring_K spring constant representing attachment between buccal mass and head
+grasperSpring_rest = params{24,1}; %grasperSpring_rest resting position of the buccal mass within the head
+mu_s_g = params{25,1}; %mu_s coefficient of static friction at grasper
+mu_k_g = params{26,1}; %mu_k coefficient of kinetic friction at grasper
+mu_s_h = params{27,1}; %mu_s coefficient of static friction at jaws
+mu_k_h = params{28,1}; %mu_k coefficient of kinetic friction at jaws
 
 
 prot_thresh = thresholds{1,1}; % threshold for having reached sufficient protraction - original 0.8
@@ -168,7 +172,11 @@ bvec(:,1:2)=[...
     0.05,0.05;  % 14. aux. var. I2 activation (input from B31/B32)
     0.05,0.05;  % 15. aux. var. grasper pull (?)
     0.05,0.05;  % 16. aux. var. grasper pinch (input from B8)
-    0.05,0.05]; % 17. aux. var. hinge (input from ??)
+    0.05,0.05; % 17. aux. var. hinge (input from ??)
+    0.0,0.0; % 18. aux. var. grasper static friction boolean (tracks if grasper is firmly holding seaweed)
+    0.0,0.0; %19 aux variable pinch static friction boolean
+    0,0; %20 aux var. grasper static friction force
+    0,0];%21 aux var. pinch static friction force
 
 cvec(1:3,1:2)=[...
     0,0;    % initial 'position' of seaweed relative to jaws (arbitrary)
@@ -191,6 +199,7 @@ for j=2:(nt-1)
     electrode_CBI2 = cvec(5,j);
     stimuli_chem_last = cvec(3,j);
     mechanical_in_grasper = cvec(6,j);
+    object_type = object_fixation(1,j); 
 
     
     MCC_last = avec(6,j);%: Metacerebral cell (generalized excitation of feeding circuit)
@@ -209,22 +218,26 @@ for j=2:(nt-1)
     B40B30_last = avec(13,j);%: B40/B30
 
     %Organization of bvec -- "body" state vector
-    GrasperState_last = bvec(1,j);%: grasper state (0: open, 1: closed)
+%    GrasperState_last = bvec(1,j);%: grasper state (0: open, 1: closed) -- not used in this model
     GrapserPressure_last = bvec(2,j);%: pressure exerted by grasper (0 to pmax)
+    
+    %uncomment to remove periphery
+    %GrapserPressure_last = 0;%: pressure exerted by grasper (0 to pmax)
+    
     I3_last = bvec(3,j);%: activation of I3, rectractor muscle (0 to b3max)
     I2_last = bvec(4,j);%: activation of I2, protractor muscle (0 to b4max)
     %PinchState_last = bvec(5,j);%: state of anterior pinch (0:
     %open/relaxed, 1:closed/taught) -- not used in this model
     position_grasper_last = bvec(6,j);%: position of grasper along protration(1)/retraction(0) axis
-    force_seaweed_last = bvec(7,j);%: force exerted by grasper on seaweed
     position_buccal_last = bvec(8,j);%: position of buccal mass relative to 'ground'
-    force_pinch = bvec(9,j);%: pinch force
     stimuli_mech_last = cvec(7,j);%: "positive mechanical input" encouraging ingestion, e.g. "feel" of seaweed %
 %    GrasperPull_last = bvec(11,j);%: activation of Grapser pull - not
 %    included in this model
     hinge_last = bvec(12,j);%: activation of hinge
 
     position_grasper_relative = position_grasper_last-position_buccal_last;
+    I3_anterior = bvec(9,j);
+    force_pinch = bvec(9,j)*min(max((1-(position_grasper_relative)^2),0),1);%: pinch force
 
     % All neural elements require avec(6) to be on (general feeding
     % arousal) to remain active.
@@ -666,7 +679,7 @@ for j=2:(nt-1)
 
     %% Update pinch force: If food present, and grasper closed, then approaches
     % pmax pressure as dp/dt=(B8*pmax-p)/tau_p.  Use a quasi-backward-Euler
-    bvec(9,j+1)=(tau_pinch*force_pinch+B38_last*pinch_max*dt)/(tau_pinch+dt);
+    bvec(9,j+1)=(tau_pinch*I3_anterior+(B38_last+B6B9B3_last)*pinch_max*dt)/(tau_pinch+dt);
     
     %bvec(9,j+1)=(tau_pinch*force_pinch+bvec(16,j)*F_pinch*dt)/(tau_pinch+dt);
     %bvec(16,j+1)=(tau_pinch*bvec(16,j)+B38_last*dt)/(tau_pinch+dt);
@@ -695,68 +708,181 @@ for j=2:(nt-1)
 %    bvec(11,j+1) = (tau_pull*GrasperPull_last+dt*bvec(15,j))/(tau_pull+dt);%new
 %    bvec(15,j+1) = (tau_pull*bvec(15,j)+dt*B8ab_last)/(tau_pull+dt);       
    
-    %% Update force exerted by grasper on seaweed --this doesn't seem quite right yet...
-    %- updated 6/11/2020
-    force_on_seaweed = mechanical_in_grasper*CBI3_last*...%ingestion
-        ((GrapserPressure_last<(.6*pmax))*(force_pinch)+...
-        (GrapserPressure_last>(.6*pmax))*(0-(buccalM_rest-position_buccal_last)*buccalM_K))+...
-        (~CBI3_last)*mechanical_in_grasper*(force_scaler*(-(buccalM_rest-position_buccal_last)*buccalM_K -... %egestion
-       max_I2*I2_last*(1-(position_grasper_relative))));
+%% NEW biomechanics
 
-    %check if seaweek is broken
-    if (force_on_seaweed>seaweed_strength)
+%% Grasper Forces
+    I2 = max_I2*I2_last*min(max((1-(position_grasper_relative)),0),1);
+    I3 = -max_I3*I3_last*min(max((0-(position_grasper_relative)),-1),0);
+    hinge = -max_hinge*hinge_last*(position_grasper_relative>0.5)*min(max((0.5-(position_grasper_relative)),-0.5),0);
+    F_sp = grasperSpring_K*(grasperSpring_rest-position_grasper_relative);
+    %if grasper forces are less than or equal to static friction ->
+    %calculate F_f for grasper
+    if(object_type == 0)
+        F_g = I2+F_sp-I3-hinge; %if the object is unconstrained it does not apply a resistive force back on the grasper. Therefore the force is just due to the muscles
+        if(abs(I2+F_sp-I3-hinge) <= abs(mu_s_g*GrapserPressure_last)) % static friction is true
+            %disp('static')
+            static=1;
+            F_f = -mechanical_in_grasper*(I2+F_sp-I3-hinge);
+            bvec(18,j+1) = 1;
+        else
+            %disp('kinetic')
+            static=0;
+            F_f = mechanical_in_grasper*mu_k_g*GrapserPressure_last;
+            %specify sign of friction force
+            F_f = -(I2+F_sp-I3-hinge)/abs(I2+F_sp-I3-hinge)*F_f;
+            bvec(18,j+1) = 0;
+        end
+    elseif (object_type == 1)
+        if(abs(I2+F_sp-I3-hinge) <= abs(mu_s_g*GrapserPressure_last)) % static friction is true
+            %disp('static')
+            static=1;
+            F_f = -mechanical_in_grasper*(I2+F_sp-I3-hinge);
+            F_g = I2+F_sp-I3-hinge + F_f;
+            bvec(18,j+1) = 1;
+        else
+            %disp('kinetic')
+            static=0;
+            F_f = mechanical_in_grasper*mu_k_g*GrapserPressure_last;
+            %specify sign of friction force
+            F_f = -(I2+F_sp-I3-hinge)/abs(I2+F_sp-I3-hinge)*F_f;
+            F_g = I2+F_sp-I3-hinge + F_f;
+            bvec(18,j+1) = 0;
+        end
+    end
+    %[j*dt position_grasper_relative I2 F_sp I3 hinge GrapserPressure_last F_g]
+
+%% Body Forces
+    F_h = -(buccalM_rest-position_buccal_last)*buccalM_K;
+    %all muscle forces are equal and opposite
+    if(object_type == 0)     
+        F_H = -F_h; %If the object is unconstrained it does not apply a force back on the head. Therefore the force is just due to the head spring.
+        if(abs(-F_h+F_f) <= abs(mu_s_h*force_pinch)) % static friction is true
+            disp('static2')
+            F_f2 = -mechanical_in_grasper*(-F_h+F_f); %only calculate the force if an object is actually present
+            bvec(19,j+1) = 1;
+        else
+            %disp('kinetic2')
+            F_f2 = mechanical_in_grasper*mu_k_h*force_pinch; %only calculate the force if an object is actually present
+            %specify sign of friction force
+            F_f2 = -(-F_h+F_f)/abs(-F_h+F_f)*F_f2;
+            bvec(19,j+1) = 0;
+        end
+    elseif (object_type == 1)
+        %calcuate friction due to jaws
+        if(abs(-F_h+F_f) <= abs(mu_s_h*force_pinch)) % static friction is true
+            %disp('static2')
+            F_f2 = -mechanical_in_grasper*(-F_h+F_f); %only calculate the force if an object is actually present
+            F_H = -F_h+F_f + F_f2;
+            bvec(19,j+1) = 1;
+        else
+            %disp('kinetic2')
+            F_f2 = mechanical_in_grasper*mu_k_h*force_pinch; %only calculate the force if an object is actually present
+            %specify sign of friction force
+            F_f2 = -(-F_h+F_f)/abs(-F_h+F_f)*F_f2;
+            F_H = -F_h+F_f + F_f2;
+            bvec(19,j+1) = 0;
+        end
+    end
+    %[position_buccal_last F_h F_sp I3 hinge force_pinch F_H]
+    
+ 
+
+%% calculate force on object
+force_on_object = F_f+F_f2;
+bvec(20,j+1) = F_f;
+bvec(21,j+1) = F_f2;
+
+%check if seaweek is broken
+if (object_type ==1)
+    if (force_on_object>seaweed_strength)
         unbroken = 0;
     end
     %check to see if a new cycle has started
     if (~unbroken && position_grasper_relative>0.8 && (GrapserPressure_last>(.6*pmax)))
        unbroken = 1; 
     end
-    bvec(7,j+1)= unbroken*force_on_seaweed;
+    bvec(7,j+1)= unbroken*force_on_object;
     
-    %% Update forces on buccal mass and update
+    %correct forces on bodies for broken seaweed
+    if (~unbroken)       
+        F_H = -F_h;
+        F_g = I2+F_sp-I3-hinge; 
+    end
+else
+    bvec(7,j+1)= force_on_object;
+end
+    
+    
+%% Integrate body motions
+%uncomment to remove periphery
+%F_g = 0;
+%F_H = 0;
+
+bvec(6,j+1) = position_grasper_last+F_g/tau_x*dt;
+bvec(8,j+1) = position_buccal_last + F_H/tau_y*dt;
+%% OLD biomechanics
+%     %% Update force exerted by grasper on seaweed --this doesn't seem quite right yet...
+%     %- updated 6/11/2020
+%     force_on_seaweed = mechanical_in_grasper*CBI3_last*...%ingestion
+%         ((GrapserPressure_last<(.6*pmax))*(force_pinch)+...
+%         (GrapserPressure_last>(.6*pmax))*(0-(buccalM_rest-position_buccal_last)*buccalM_K))+...
+%         (~CBI3_last)*mechanical_in_grasper*(force_scaler*(-(buccalM_rest-position_buccal_last)*buccalM_K -... %egestion
+%        max_I2*I2_last*(1-(position_grasper_relative))));
+% 
+%     %check if seaweek is broken
+%     if (force_on_seaweed>seaweed_strength)
+%         unbroken = 0;
+%     end
+%     %check to see if a new cycle has started
+%     if (~unbroken && position_grasper_relative>0.8 && (GrapserPressure_last>(.6*pmax)))
+%        unbroken = 1; 
+%     end
+%     bvec(7,j+1)= unbroken*force_on_seaweed;
+%     
+%     %% Update forces on buccal mass and update
+% %     body_forces = CBI3_last*(... %if ingestion
+% %         (((force_on_seaweed<=seaweed_strength)*PinchState_last*force_pinch*mechanical_in_grasper-...
+% %          (~PinchState_last)*...
+% %          (max_I3*I3_last*(0-(position_grasper_relative)))*(mechanical_in_grasper)*(force_on_seaweed<=seaweed_strength))+... %I3 moves body forward when the grasper is strongly grasping seaweed and the seaweed has not broken
+% %          (buccalM_rest-position_buccal_last)*buccalM_K))+... 
+% %          ((~CBI3_last)*(... %if egestion 
+% %          (buccalM_rest-position_buccal_last)*buccalM_K)); %the ever present spring
+% 
 %     body_forces = CBI3_last*(... %if ingestion
-%         (((force_on_seaweed<=seaweed_strength)*PinchState_last*force_pinch*mechanical_in_grasper-...
-%          (~PinchState_last)*...
+%         (((force_on_seaweed<=seaweed_strength)*force_pinch*mechanical_in_grasper-...
 %          (max_I3*I3_last*(0-(position_grasper_relative)))*(mechanical_in_grasper)*(force_on_seaweed<=seaweed_strength))+... %I3 moves body forward when the grasper is strongly grasping seaweed and the seaweed has not broken
 %          (buccalM_rest-position_buccal_last)*buccalM_K))+... 
 %          ((~CBI3_last)*(... %if egestion 
 %          (buccalM_rest-position_buccal_last)*buccalM_K)); %the ever present spring
-
-    body_forces = CBI3_last*(... %if ingestion
-        (((force_on_seaweed<=seaweed_strength)*force_pinch*mechanical_in_grasper-...
-         (max_I3*I3_last*(0-(position_grasper_relative)))*(mechanical_in_grasper)*(force_on_seaweed<=seaweed_strength))+... %I3 moves body forward when the grasper is strongly grasping seaweed and the seaweed has not broken
-         (buccalM_rest-position_buccal_last)*buccalM_K))+... 
-         ((~CBI3_last)*(... %if egestion 
-         (buccalM_rest-position_buccal_last)*buccalM_K)); %the ever present spring
-
-    bvec(8,j+1) = position_buccal_last + body_forces/tau_y*dt; %pinch force and integrate
-      
-    %% Update the position X of the grasper relative to ground. 
-    %When it is
-    %grasping the seaweed firmly it cannot move relative to the ground. When
-    %it is not grasping the seaweed its motion will be both because of
-    %muscle activity and the frame of teh buccal mass moving. ***This
-    %implementation likely still needs work.
-
-    %ROPE ATTACHED TO WALL - Stationary when pulling but not when pushin
-    grasper_forces = ...
-       CBI3_last*mechanical_in_grasper*(... %if swallowing
-       (~((GrapserPressure_last>(.6*pmax))*(mechanical_in_grasper)*(force_on_seaweed<=seaweed_strength)))*... % AND grasper does not move if strongly holding seaweed that is in the grasper and seaweed has not broken
-       (body_forces +... %body forces
-       max_I3*I3_last*(0-(position_grasper_relative))+... %I3 force
-       max_I2*I2_last*(1-(position_grasper_relative))))+...
-       (~CBI3_last)*(body_forces +... %if rejection
-       max_I2*I2_last*(1-(position_grasper_relative))+... %I2 force   
-       (max_I3*I3_last*(0-(position_grasper_relative)))+... %I3 force
-       max_hinge*hinge_last*(position_grasper_relative>0.5)*(0.5-(position_grasper_relative)))+...%hinge force if in egestion
-       CBI3_last*(~mechanical_in_grasper)*... %if biting
-       (body_forces +... %body forces
-       max_I3*I3_last*(0-(position_grasper_relative))+... %I3 force
-       max_I2*I2_last*(1-(position_grasper_relative))+...
-       max_hinge*hinge_last*(position_grasper_relative>0.5)*(0.5-(position_grasper_relative))); 
-
-    bvec(6,j+1) = position_grasper_last+...
-       grasper_forces/tau_x*dt;
+% 
+%     bvec(8,j+1) = position_buccal_last + body_forces/tau_y*dt; %pinch force and integrate
+%       
+%     %% Update the position X of the grasper relative to ground. 
+%     %When it is
+%     %grasping the seaweed firmly it cannot move relative to the ground. When
+%     %it is not grasping the seaweed its motion will be both because of
+%     %muscle activity and the frame of teh buccal mass moving. ***This
+%     %implementation likely still needs work.
+% 
+%     %ROPE ATTACHED TO WALL - Stationary when pulling but not when pushin
+%     grasper_forces = ...
+%        CBI3_last*mechanical_in_grasper*(... %if swallowing
+%        (~((GrapserPressure_last>(.6*pmax))*(mechanical_in_grasper)*(force_on_seaweed<=seaweed_strength)))*... % AND grasper does not move if strongly holding seaweed that is in the grasper and seaweed has not broken
+%        (body_forces +... %body forces
+%        max_I3*I3_last*(0-(position_grasper_relative))+... %I3 force
+%        max_I2*I2_last*(1-(position_grasper_relative))))+...
+%        (~CBI3_last)*(body_forces +... %if rejection
+%        max_I2*I2_last*(1-(position_grasper_relative))+... %I2 force   
+%        (max_I3*I3_last*(0-(position_grasper_relative)))+... %I3 force
+%        max_hinge*hinge_last*(position_grasper_relative>0.5)*(0.5-(position_grasper_relative)))+...%hinge force if in egestion
+%        CBI3_last*(~mechanical_in_grasper)*... %if biting
+%        (body_forces +... %body forces
+%        max_I3*I3_last*(0-(position_grasper_relative))+... %I3 force
+%        max_I2*I2_last*(1-(position_grasper_relative))+...
+%        max_hinge*hinge_last*(position_grasper_relative>0.5)*(0.5-(position_grasper_relative))); 
+% 
+%     bvec(6,j+1) = position_grasper_last+...
+%        grasper_forces/tau_x*dt;
 
     %% Update feel of seaweed
     bvec(10,j+1) = 1;
@@ -765,10 +891,10 @@ for j=2:(nt-1)
    %cvec(1,j+1)=cvec(1,j);
    %if seaweed is firmly grasped then the motion is the same as that of the
    %grasper, otherwise it is the same as the body?
-   cvec(1,j+1) = (GrapserPressure_last>(.5*pmax))*(mechanical_in_grasper)*...
-       (cvec(1,j)+grasper_forces/tau_x*dt)+...
-       (GrapserPressure_last<(.5*pmax))*(mechanical_in_grasper)*...
-       (cvec(1,j)+body_forces/tau_y*dt);
+%    cvec(1,j+1) = (GrapserPressure_last>(.5*pmax))*(mechanical_in_grasper)*...
+%        (cvec(1,j)+grasper_forces/tau_x*dt)+...
+%        (GrapserPressure_last<(.5*pmax))*(mechanical_in_grasper)*...
+%        (cvec(1,j)+body_forces/tau_y*dt);
    
    %% Update external load on seaweed - remains the same for the fixed seaweed tests
    cvec(2,j+1)=cvec(2,j);
