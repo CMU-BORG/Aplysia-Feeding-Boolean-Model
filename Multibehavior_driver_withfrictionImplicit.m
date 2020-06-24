@@ -2,7 +2,7 @@ close all
 clear all
 
 %% Specify label suffix for saving figures
-suffix = '_wout_hypothesized_6_18_2020';
+suffix = '_wout_hypothesized_6_24_2020';
 
 %% Set simulation parameters
 params{1,1} = .05; %dt Time units in seconds
@@ -79,7 +79,7 @@ chemicalAtLips = ones(1,nt);
 mechanicalAtLips = ones(1,nt);
 mechanicalInGrasper = zeros(1,nt);
 object_fixation = zeros(1,nt); % is the object fixed (1) or not fixed (0)
-[bite_avec,bite_bvec,bite_cvec] = Aplysia_boolean_model_withfriction(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength, object_fixation);
+[bite_avec,bite_bvec,bite_cvec] = Aplysia_boolean_model_withfrictionImplicit(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength, object_fixation);
 
 Plot_behavior(t,bite_avec,bite_bvec,bite_cvec,['Bite_' suffix],xlimits,params{4,1},params)
 
@@ -88,7 +88,7 @@ chemicalAtLips = ones(1,nt);
 mechanicalAtLips = ones(1,nt);
 mechanicalInGrasper = ones(1,nt);
 object_fixation = ones(1,nt); % is the object fixed (1) or not fixed (0)
-[swallow_avec,swallow_bvec,swallow_cvec] = Aplysia_boolean_model_withfriction(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength, object_fixation);
+[swallow_avec,swallow_bvec,swallow_cvec] = Aplysia_boolean_model_withfrictionImplicit(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength, object_fixation);
 
 Plot_behavior(t,swallow_avec,swallow_bvec,swallow_cvec,['Swallow_' suffix],xlimits,params{4,1},params)
 
@@ -121,7 +121,7 @@ chemicalAtLips = zeros(1,nt);
 mechanicalAtLips = ones(1,nt);
 mechanicalInGrasper = ones(1,nt);
 object_fixation = zeros(1,nt); % is the object fixed (1) or not fixed (0)
-[reject_avec,reject_bvec,reject_cvec] = Aplysia_boolean_model_withfriction(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength, object_fixation);
+[reject_avec,reject_bvec,reject_cvec] = Aplysia_boolean_model_withfrictionImplicit(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength, object_fixation);
 
 Plot_behavior(t,reject_avec,reject_bvec,reject_cvec,['Reject_' suffix],xlimits,params{4,1},params)
 
@@ -140,7 +140,7 @@ for seaweed_strength = seaweed_strength_min:step_size:seaweed_strength_max
     chemicalAtLips = ones(1,nt);
     mechanicalAtLips = ones(1,nt);
     mechanicalInGrasper = ones(1,nt);
-    [swallow_avec2,swallow_bvec2,swallow_cvec2] = Aplysia_boolean_model_withfriction(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength, object_fixation);
+    [swallow_avec2,swallow_bvec2,swallow_cvec2] = Aplysia_boolean_model_withfrictionImplicit(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength, object_fixation);
     
     seaweed_strength_result{i,:} = {seaweed_strength,swallow_avec2,swallow_bvec2,swallow_cvec2};
     
@@ -249,7 +249,7 @@ mechanicalAtLips = ones(1,nt);
 mechanicalInGrasper = ones(1,nt);
 stim=zeros(13,nt);
 seaweed_strength = 10;
-[swallowToReject_avec,swallowToReject_bvec,swallowToReject_cvec] = Aplysia_boolean_model_withfriction(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength, object_fixation);
+[swallowToReject_avec,swallowToReject_bvec,swallowToReject_cvec] = Aplysia_boolean_model_withfrictionImplicit(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength, object_fixation);
 
 Plot_behavior(t,swallowToReject_avec,swallowToReject_bvec,swallowToReject_cvec,['SwallowToReject_' suffix],xlimits,params{4,1},params)
 
@@ -265,7 +265,7 @@ mechanicalInGrasper = zeros(1,nt);
 mechanicalInGrasper(1,step_switch:nt) = ones(1,length(step_switch:nt));
 stim=zeros(13,nt);
 seaweed_strength = 10;
-[biteToSwallow_avec,biteToSwallow_bvec,biteToSwallow_cvec] = Aplysia_boolean_model_withfriction(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength, object_fixation);
+[biteToSwallow_avec,biteToSwallow_bvec,biteToSwallow_cvec] = Aplysia_boolean_model_withfrictionImplicit(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength, object_fixation);
 
 Plot_behavior(t,biteToSwallow_avec,biteToSwallow_bvec,biteToSwallow_cvec,['BiteToSwallow_' suffix],xlimits,params{4,1},params)
 
@@ -284,7 +284,7 @@ mechanicalAtLips = ones(1,nt);
 mechanicalInGrasper = ones(1,nt);
 object_fixation = ones(1,nt); % is the object fixed (1) or not fixed (0)
 seaweed_strength = 10;
-[B4B5stim_avec,B4B5stim_bvec,B4B5stim_cvec] = Aplysia_boolean_model_withfriction(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength, object_fixation);
+[B4B5stim_avec,B4B5stim_bvec,B4B5stim_cvec] = Aplysia_boolean_model_withfrictionImplicit(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength, object_fixation);
 
 xlimits = [5 40];
 figure1 = Plot_behavior(t,B4B5stim_avec,B4B5stim_bvec,B4B5stim_cvec,['B4B5stim_' suffix],xlimits,params{4,1},params)

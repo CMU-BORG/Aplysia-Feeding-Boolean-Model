@@ -375,8 +375,8 @@ I3 = bvec(3,:);
 hinge = bvec(12,:);
 position_grasper_relative = bvec(6,:)-bvec(8,:);
 pinch = bvec(9,:).*min(max((1-(position_grasper_relative).^2),0),1);
-headspring = -(buccalM_rest-bvec(8,:))*buccalM_K;
-grasperspring = -(grasper_rest-position_grasper_relative)*grasper_K;
+headspring = (buccalM_rest-bvec(8,:))*buccalM_K;
+grasperspring = (grasper_rest-position_grasper_relative)*grasper_K;
 pressure = bvec(2,:)/pmax;
 %scaled_spring = spring.*pressure;
 
@@ -410,6 +410,8 @@ grasper_motion_pressure(idy)=NaN;
 plot(t,grasper_motion_pressure,'b','LineWidth',4)
 hold on
 plot(t,grasper_motion,'b','LineWidth',2)
+plot(t,bvec(6,:),'LineWidth',2, 'Color', [213/255, 155/255, 196/255])
+plot(t,bvec(8,:),'k','LineWidth',2)
 hold off
 
 
@@ -422,7 +424,7 @@ set(gca,'xtick',[])
 set(gca,'YTickLabel',[]);
 ylabel({'Grasper';'Motion'}, 'Color', [0/255, 0/255, 255/255])
 %grid on
-ylim([ymin 1.5])
+%ylim([ymin 1.5])
 xlim(xl)
 set(gca,'XColor','none')
 hYLabel = get(gca,'YLabel');
