@@ -308,14 +308,13 @@ for j=2:(nt-1)
     end
     if ((CBI3_stimON ~=0) && (B4B5_last<2))
        CBI3_refractory = 1;
-       CBI3_stimOFF = j  
+       CBI3_stimOFF = j;  
        CBI3_stimON = 0;    
     end 
 
     if(CBI3_refractory && j<(CBI3_stimOFF+CBI3_refractoryDuration))
        CBI3_refractory = 1; 
     else
-        j
         CBI3_stimOFF = 0;
         CBI3_refractory = 0; 
     end
@@ -323,7 +322,7 @@ for j=2:(nt-1)
 
     %CBI3 - updated 6/7/2020    
     %with hypothesized connections from B4/B5
-    %avec(8,j+1) = MCC_last*(stimuli_mech_last*stimuli_chem_last)*((B4B5_last<2))*(~CBI3_refractory);   
+%     avec(8,j+1) = MCC_last*(stimuli_mech_last*stimuli_chem_last)*((B4B5_last<2))*(~CBI3_refractory);   
     %without hypothesized connections from B4/B5  
     avec(8,j+1) = MCC_last*(stimuli_mech_last*stimuli_chem_last); 
 
@@ -516,11 +515,11 @@ for j=2:(nt-1)
 
     avec(4,j+1)=MCC_last*(...
         CBI3_last*... %if ingestion
-            ((~B64_last)*((P_I4<(pmax/2))||CBI2_last)*... 
+            ((~B64_last)*((P_I4<(1/2))||CBI2_last)*... 
                 ((~B31B32_last)*(x_gh<ret_thresh)+...
                    B31B32_last *(x_gh<prot_thresh)))+...
       (~CBI3_last)*... %if egestion
-            ((~B64_last)*(P_I4>(pmax/4))*(CBI2_last||CBI4_last)*...
+            ((~B64_last)*(P_I4>(1/4))*(CBI2_last||CBI4_last)*...
                 ((~B31B32_last)*(x_gh<ret_thresh)+...
                    B31B32_last *(x_gh<prot_thresh))));
              
@@ -581,10 +580,10 @@ for j=2:(nt-1)
 
     avec(5,j+1)=MCC_last*(~(B4B5_last>=2))*(...
         (CBI3_last)*... Ingestion / CBI3 active
-            (B64_last)*(P_I4>(B6B9B3_pressure_thresh*pmax))...
+            (B64_last)*(P_I4>(B6B9B3_pressure_thresh))...
         +...
         (~CBI3_last)*...Egestion / CBI3 inactive
-            (B64_last)*(P_I4<(B6B9B3_pressure_thresh*pmax)));
+            (B64_last)*(P_I4<(B6B9B3_pressure_thresh)));
 
     
     %% Update B8a/b
@@ -645,7 +644,7 @@ for j=2:(nt-1)
     else %biting
         B7_thresh = B7_thresh_protract_biting;       
     end
-    avec(11,j+1) = MCC_last*((~CBI3_last)||(~mechanical_in_grasper))*((x_gh>=B7_thresh)||(P_I4>(.97*pmax)));
+    avec(11,j+1) = MCC_last*((~CBI3_last)||(~mechanical_in_grasper))*((x_gh>=B7_thresh)||(P_I4>(.97)));
       
     %% Update B38: 
     % If already active, remain active until protracted past
@@ -674,11 +673,11 @@ for j=2:(nt-1)
    
     %% Update pressure: If food present, and grasper closed, then approaches
     % pmax pressure as dp/dt=(B8*pmax-p)/tau_p.  Use a quasi-backward-Euler
-    bvec(2,j+1)=((tau_p*P_I4+B8ab_last*pmax*dt)/(tau_p+dt));%old -- keep this version
+    bvec(2,j+1)=((tau_p*P_I4+B8ab_last*dt)/(tau_p+dt));%old -- keep this version
 
     %% Update pinch force: If food present, and grasper closed, then approaches
     % pmax pressure as dp/dt=(B8*pmax-p)/tau_p.  Use a quasi-backward-Euler
-    bvec(9,j+1)=(tau_pinch*P_I3_anterior+(B38_last+B6B9B3_last)*pinch_max*dt)/(tau_pinch+dt);
+    bvec(9,j+1)=(tau_pinch*P_I3_anterior+(B38_last+B6B9B3_last)*dt)/(tau_pinch+dt);
     
     %bvec(9,j+1)=(tau_pinch*force_pinch+bvec(16,j)*F_pinch*dt)/(tau_pinch+dt);
     %bvec(16,j+1)=(tau_pinch*bvec(16,j)+B38_last*dt)/(tau_pinch+dt);
@@ -716,7 +715,8 @@ for j=2:(nt-1)
     F_Hi = max_hinge*T_Hi*(x_gh>0.5)*[-1,1]*[x_h;x_g]-max_hinge*T_Hi*0.5;
     F_sp_g = K_g*[1,-1]*[x_h;x_g]+K_g*x_gh_ref;
     
-    F_I3_ant = P_I3_anterior*[1,-1]*[x_h;x_g]+P_I3_anterior*1;%: pinch force
+    F_I4 = pmax*P_I4;
+    F_I3_ant = pinch_max*P_I3_anterior*[1,-1]*[x_h;x_g]+pinch_max*P_I3_anterior*1;%: pinch force
     
     %calculate F_f for grasper
     if(object_type == 0) %object is not fixed to a contrained surface
@@ -728,12 +728,8 @@ for j=2:(nt-1)
         A21 = A2(1);
         A22 = A2(2);
         
-        %A21 = 1/c_g*(max_I2*T_I2+K_g+max_I3*T_I3+max_hinge*T_Hi);
-        %A22 = 1/c_g*(-max_I2*T_I2-K_g-max_I3*T_I3-max_hinge*T_Hi);
-        %B2 = 1/c_g*(max_I2*T_I2+K_g*x_gh_ref+0.5*max_hinge*T_Hi);
-        
         %the force on the object is approximated based on the friction
-        if(abs(F_I2+F_sp_g-F_I3-F_Hi) <= abs(mu_s_g*P_I4)) % static friction is true
+        if(abs(F_I2+F_sp_g-F_I3-F_Hi) <= abs(mu_s_g*F_I4)) % static friction is true
             %disp('static')
             static=1;
             F_f_g = -mechanical_in_grasper*(F_I2+F_sp_g-F_I3-F_Hi);
@@ -741,14 +737,14 @@ for j=2:(nt-1)
         else
             %disp('kinetic')
             static=0;
-            F_f_g = mechanical_in_grasper*mu_k_g*P_I4;
+            F_f_g = mechanical_in_grasper*mu_k_g*F_I4;
             %specify sign of friction force
             F_f_g = -(F_I2+F_sp_g-F_I3-F_Hi)/abs(F_I2+F_sp_g-F_I3-F_Hi)*F_f_g;
             bvec(18,j+1) = 0;
         end
         
     elseif (object_type == 1) %object is fixed to a contrained surface
-        if(abs(F_I2+F_sp_g-F_I3-F_Hi) <= abs(mu_s_g*P_I4)) % static friction is true
+        if(abs(F_I2+F_sp_g-F_I3-F_Hi) <= abs(mu_s_g*F_I4)) % static friction is true
             %disp('static')
             static=1;
             F_f_g = -mechanical_in_grasper*(F_I2+F_sp_g-F_I3-F_Hi);
@@ -762,7 +758,7 @@ for j=2:(nt-1)
         else
             %disp('kinetic')
             static=0;
-            F_f_g = -sign(F_I2+F_sp_g-F_I3-F_Hi)*mechanical_in_grasper*mu_k_g*P_I4;
+            F_f_g = -sign(F_I2+F_sp_g-F_I3-F_Hi)*mechanical_in_grasper*mu_k_g*F_I4;
             %specify sign of friction force
             F_g = F_I2+F_sp_g-F_I3-F_Hi + F_f_g;
             bvec(18,j+1) = 0;
@@ -774,10 +770,6 @@ for j=2:(nt-1)
 
             A21 = A2(1);
             A22 = A2(2);
-        
-            %A21 = 1/c_g*(max_I2*T_I2+K_g+max_I3*T_I3+max_hinge*T_Hi);
-            %A22 = 1/c_g*(-max_I2*T_I2-K_g-max_I3*T_I3-max_hinge*T_Hi);
-            %B2 = 1/c_g*(max_I2*T_I2+K_g*x_gh_ref+0.5*max_hinge*T_Hi+F_f_g);
         end
     end
     %[j*dt position_grasper_relative I2 F_sp I3 hinge GrapserPressure_last F_g]
@@ -796,7 +788,7 @@ for j=2:(nt-1)
         A12 = A1(2);
         
         if(abs(F_sp_h+F_f_g) <= abs(mu_s_h*F_I3_ant)) % static friction is true
-            disp('static2')
+            %disp('static2')
             F_f_h = -mechanical_in_grasper*(F_sp_h+F_f_g); %only calculate the force if an object is actually present
             bvec(19,j+1) = 1;
         else
@@ -829,20 +821,15 @@ for j=2:(nt-1)
             if (bvec(18,j+1) == 1) %object is fixed and grasper is static  
             % F_f_g = -mechanical_in_grasper*(F_I2+F_sp_g-F_I3-F_Hi);
                 A1 = 1/c_b*(K_h*[-1,0]+(-mechanical_in_grasper*(max_I2*T_I2*[1,-1]+K_g*[1,-1]-max_I3*T_I3*[-1,1]-max_hinge*T_Hi*(x_gh>0.5)*[-1,1]))...
-                    -sign(F_sp_h+F_f_g)*mechanical_in_grasper*mu_k_h*P_I3_anterior*[1,-1]);
+                    -sign(F_sp_h+F_f_g)*mechanical_in_grasper*mu_k_h*pinch_max*P_I3_anterior*[1,-1]);
                 B1 = 1/c_b*(x_h_ref*K_h+(-mechanical_in_grasper*(max_I2*T_I2*1+K_g*x_gh_ref+max_I3*T_I3*0+max_hinge*T_Hi*0.5))...
-                    -sign(F_sp_h+F_f_g)*mechanical_in_grasper*mu_k_h*P_I3_anterior*1);
+                    -sign(F_sp_h+F_f_g)*mechanical_in_grasper*mu_k_h*pinch_max*P_I3_anterior*1);
                 
-                %A11 = 1/c_b*(-K_h-sign(F_I2+F_sp_g-F_I3-F_Hi)*(max_I2*T_I2+K_g+max_I3*T_I3+max_hinge*T_Hi)-sign(F_sp_h+F_f_g)*mechanical_in_grasper*mu_k_h*P_I3_anterior);
-                %A12 = 1/c_b*(sign(F_I2+F_sp_g-F_I3-F_Hi)*(max_I2*T_I2+K_g+max_I3*T_I3+max_hinge*T_Hi)+sign(F_sp_h+F_f_g)*mechanical_in_grasper*mu_k_h*P_I3_anterior);
-                %B1 = 1/c_b*(K_h*x_h_ref-sign(F_I2+F_sp_g-F_I3-F_Hi)*(max_I2*T_I2+K_g*x_gh_ref+0.5*max_hinge*T_Hi)-sign(F_sp_h+F_f_g)*mechanical_in_grasper*mu_k_h*P_I3_anterior);
             else %both are kinetic
-            %F_f_g = -sign(F_I2+F_sp_g-F_I3-F_Hi)*mechanical_in_grasper*mu_k_g*P_I4;
-                A1 = 1/c_b*(K_h*[-1,0]-sign(F_sp_h+F_f_g)*mechanical_in_grasper*mu_k_h*P_I3_anterior*[1,-1]);
-                %A11 = 1/c_b*(-K_h-sign(F_sp_h+F_f_g)*mechanical_in_grasper*mu_k_h*P_I3_anterior);
-                %A12 = 1/c_b*(sign(F_sp_h+F_f_g)*mechanical_in_grasper*mu_k_h*P_I3_anterior);
-                B1 = 1/c_b*(x_h_ref*K_h-sign(F_I2+F_sp_g-F_I3-F_Hi)*mechanical_in_grasper*mu_k_g*P_I4...
-                    -sign(F_sp_h+F_f_g)*mechanical_in_grasper*mu_k_h*P_I3_anterior*1);                
+            %F_f_g = -sign(F_I2+F_sp_g-F_I3-F_Hi)*mechanical_in_grasper*mu_k_g*F_I4;
+                A1 = 1/c_b*(K_h*[-1,0]-sign(F_sp_h+F_f_g)*mechanical_in_grasper*mu_k_h*pinch_max*P_I3_anterior*[1,-1]);
+                B1 = 1/c_b*(x_h_ref*K_h-sign(F_I2+F_sp_g-F_I3-F_Hi)*mechanical_in_grasper*mu_k_g*F_I4...
+                    -sign(F_sp_h+F_f_g)*mechanical_in_grasper*mu_k_h*pinch_max*P_I3_anterior*1);                
             end
             A11= A1(1);
             A12 = A1(2);
@@ -863,7 +850,7 @@ if (object_type ==1)
         unbroken = 0;
     end
     %check to see if a new cycle has started
-    if (~unbroken && x_gh>0.8 && (P_I4>(.6*pmax)))
+    if (~unbroken && x_gh>0.8 && (P_I4>(.6)))
        unbroken = 1; 
     end
     bvec(7,j+1)= unbroken*force_on_object;
