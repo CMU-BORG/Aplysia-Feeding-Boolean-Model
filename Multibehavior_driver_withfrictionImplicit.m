@@ -2,7 +2,7 @@ close all
 clear all
 
 %% Specify label suffix for saving figure;s
-suffix = '_wout_hypothesized_6_24_2020';
+suffix = '_with_hypothesized_7_10_2020';
 
 %% Set simulation parameters
 params{1,1} = .05; %dt Time units in seconds
@@ -62,8 +62,6 @@ thresholds{19,1} = 0.9; %B7_thresh_protract_biting threshold for protraction dur
 thresholds{20,1} = 0.25; %B6B9B3_pressure_thresh_swallowing
 thresholds{21,1} = 0.2; %B6B9B3_pressure_thresh_biting
 thresholds{22,1} = 0.75; %B6B9B3_pressure_thresh_reject
-
-
 
 modulation{1,1} = 0.5;%I2_tau_ingestion;
 modulation{2,1} = 1.4;%I2_tau_egestion;
@@ -132,8 +130,8 @@ toc
 Plot_behavior(t,reject_avec,reject_bvec,reject_cvec,['Reject_' suffix],xlimits,params{4,1},params);
 
 %% Multifunctional swallowing of different strength seaweeds
-seaweed_strength_min = 0.1;
-seaweed_strength_max = 0.5;
+seaweed_strength_min = 0.15;
+seaweed_strength_max = 0.55;
 step_size = 0.1;
 num_strengths = round((seaweed_strength_max-seaweed_strength_min)/step_size+1);
 i = 1;
