@@ -10,8 +10,7 @@
 %
 % Last Update: 5/26/2020
 
-function [avec,bvec,cvec] = Aplysia_boolean_model_withfrictionImplicit(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength, object_fixation)
-
+function [avec,bvec,cvec] = Aplysia_boolean_model_withfrictionImplicit(chemicalAtLips,mechanicalAtLips,mechanicalInGrasper,params,thresholds,modulation,stim,seaweed_strength, object_fixation,hypothesizedCon)
 
 %% Preallocate arrays
 dt=params{1,1}; % Time units in seconds
@@ -74,7 +73,7 @@ cvec=zeros(nc_units,nt);
 % When equal to -one, unit is forced to turn off no matter what.
 
 %% Set parameters
-pmax = params{4,1}; % maximum pressure grasper can exert on food (an arbitrary numb.)
+max_I4 = params{4,1}; % maximum pressure grasper can exert on food (an arbitrary numb.)
 tau_I4 = params{5,1}; % time constant (in seconds) for pressure applied by grasper - orginial is 1.0
 tau_I3anterior = params{6,1}; % time constant (in seconds) for pressure of pinch - original is 2.0
 tau_pull = params{7,1}; %time constant (in seconds) for B8 pulling
@@ -85,7 +84,7 @@ prot_pas = params{11,1}; % passive protractive force - original 0.01
 retr_pas = params{12,1}; % passive retractive force - original 0.015
 K_h = params{13,1}; % spring constant representing boddy from buccal mass to ground
 x_h_ref = params{14,1}; % resting position of body
-pinch_max = params{15,1}; % pinch force, original 0.15
+max_I3ant = params{15,1}; % pinch force, original 0.15
 force_scaler = params{16,1}; % 
 gap = params{17,1}; % influence of CBI2-CBI3 gap junction on a scale of 0 to 1.  Not used yet...
 CBI3_refractoryDuration = params{18,1}/1000/dt; %converted to timesteps
@@ -138,7 +137,7 @@ B40B30_offTime = 0;
 % at the start of the protraction phase, so the grasper is retracted and
 % starting to protract.  
 %
-% Specify first two states so we can calculate rates of change.
+% Specify first two states as initial conditions so we can calculate rates of change.
 
 avec(:,1:2)=[...
     0,0;      % B8a/b are off
@@ -158,8 +157,8 @@ avec(:,1:2)=[...
 bvec(:,1:2)=[...
     0,0;        % 1. grasper is open
     0,0;        % 2. no grasper pressure is exerted
-    0.05,.05;   % 3. I3 not activated much
-    0.05,.05;   % 4. I2 also not activated much
+    0.05,.05;   % 3. I3 not activated much initially
+    0.05,.05;   % 4. I2 also not activated much  initially
     1,1;        % 5. anterior pinch is closed
     0.1,0.1;    % 6. start with grasper mostly retracted?
     0.2,0.2;    % 7. grasper force is low, but not at minimum yet.
@@ -219,26 +218,19 @@ for j=2:(nt-1)
     B7_last = avec(11,j);%: B7 - only relevent in egestion
     B40B30_last = avec(13,j);%: B40/B30
 
-    %Organization of bvec -- "body" state vector
-%    GrasperState_last = bvec(1,j);%: grasper state (0: open, 1: closed) -- not used in this model
-    P_I4 = bvec(2,j);%: pressure exerted by grasper (0 to pmax)
-    
-    %uncomment to remove periphery
-    %GrapserPressure_last = 0;%: pressure exerted by grasper (0 to pmax)
     
     T_I3 = bvec(3,j);%: activation of I3, rectractor muscle (0 to b3max)
     T_I2 = bvec(4,j);%: activation of I2, protractor muscle (0 to b4max)
-    %PinchState_last = bvec(5,j);%: state of anterior pinch (0:
-    %open/relaxed, 1:closed/taught) -- not used in this model
+    T_hinge = bvec(12,j);%: activation of hinge
+
     x_g = bvec(6,j);%: position of grasper along protration(1)/retraction(0) axis
     x_h = bvec(8,j);%: position of buccal mass relative to 'ground'
     stimuli_mech_last = cvec(7,j);%: "positive mechanical input" encouraging ingestion, e.g. "feel" of seaweed %
-%    GrasperPull_last = bvec(11,j);%: activation of Grapser pull - not
-%    included in this model
-    T_Hi = bvec(12,j);%: activation of hinge
 
-    x_gh = x_g-x_h;
     P_I3_anterior = bvec(9,j);
+    P_I4 = bvec(2,j);%: pressure exerted by grasper (0 to pmax)
+        
+    x_gh = x_g-x_h;
 
     % All neural elements require avec(6) to be on (general feeding
     % arousal) to remain active.
@@ -267,13 +259,16 @@ for j=2:(nt-1)
 
     %CBI2 - updated 6/7/2020
     %with hypothesized connections from B4/B5
+    if (hypothesizedCon ==1)
      avec(7,j+1) = (electrode_CBI2==0)*... if electrode above CBI-2 is off, do this:
          MCC_last*(~B64_last)*((stimuli_mech_last&&stimuli_chem_last&&(~mechanical_in_grasper))||(mechanical_in_grasper&&(~stimuli_chem_last))||(B4B5_last>=2))+...
          (electrode_CBI2==1);
+    else
     %without hypothesized connections from B4/B5
-%     avec(7,j+1) = (electrode_CBI2==0)*... if electrode above CBI-2 is off, do this:
-%         MCC_last*(~B64_last)*((stimuli_mech_last&&stimuli_chem_last&&(~mechanical_in_grasper))||(mechanical_in_grasper&&(~stimuli_chem_last)))+...
-%         (electrode_CBI2==1);
+    avec(7,j+1) = (electrode_CBI2==0)*... if electrode above CBI-2 is off, do this:
+        MCC_last*(~B64_last)*((stimuli_mech_last&&stimuli_chem_last&&(~mechanical_in_grasper))||(mechanical_in_grasper&&(~stimuli_chem_last)))+...
+        (electrode_CBI2==1);
+    end
 
     %% Update CBI-3
     % requires stimuli_mech_last AND stimuli_chem_last
@@ -323,10 +318,13 @@ for j=2:(nt-1)
 
 
     %CBI3 - updated 6/7/2020    
-    %with hypothesized connections from B4/B5
-     avec(8,j+1) = MCC_last*(stimuli_mech_last*stimuli_chem_last)*((B4B5_last<2))*(~CBI3_refractory);   
+    %with hypothesized connections from B4/B5    
+    if (hypothesizedCon ==1)
+      avec(8,j+1) = MCC_last*(stimuli_mech_last*stimuli_chem_last)*((B4B5_last<2))*(~CBI3_refractory);   
+    else
     %without hypothesized connections from B4/B5  
-%    avec(8,j+1) = MCC_last*(stimuli_mech_last*stimuli_chem_last); 
+        avec(8,j+1) = MCC_last*(stimuli_mech_last*stimuli_chem_last); 
+    end
 
 
     
@@ -685,7 +683,7 @@ for j=2:(nt-1)
 
     %% Update Hinge activation: dm/dt=(B7-m)/tau_m.  quasi-B-Eul.
     %bvec(12,j+1)=(tau_m*hinge_last+dt*B7_last)/(tau_m+dt);%old
-    bvec(12,j+1)=(tau_m*T_Hi+dt*bvec(17,j))/(tau_m+dt);%new
+    bvec(12,j+1)=(tau_m*T_hinge+dt*bvec(17,j))/(tau_m+dt);%new
     bvec(17,j+1)=(tau_m*bvec(17,j)+dt*B7_last)/(tau_m+dt);
     
     %% Update Grasper Pull (retractor) activation: dm/dt=(B8-m)/tau_m - not included in this model
@@ -693,49 +691,49 @@ for j=2:(nt-1)
 %    bvec(11,j+1) = (tau_pull*GrasperPull_last+dt*bvec(15,j))/(tau_pull+dt);%new
 %    bvec(15,j+1) = (tau_pull*bvec(15,j)+dt*B8ab_last)/(tau_pull+dt);       
    
-%% NEW biomechanics
+%% Biomechanics
 
 %% Grasper Forces
 %all forces in form F = Ax+b
-    F_I2 = max_I2*T_I2*[1,-1]*[x_h;x_g] + max_I2*T_I2*1;
-    F_I3 = max_I3*T_I3*[-1,1]*[x_h;x_g]-max_I3*T_I3*0;
-    F_Hi = max_hinge*T_Hi*(x_gh>0.5)*[-1,1]*[x_h;x_g]-max_hinge*T_Hi*0.5;
-    F_sp_g = K_g*[1,-1]*[x_h;x_g]+K_g*x_gh_ref;
+    F_I2 = max_I2*T_I2*[1,-1]*[x_h;x_g] + max_I2*T_I2*1; %FI2 = FI2_max*T_I2*(1-(xg-xh))
+    F_I3 = max_I3*T_I3*[-1,1]*[x_h;x_g]-max_I3*T_I3*0; %FI3 = FI3_max*T_I3*((xg-xh)-0)
+    F_hinge = (x_gh>0.5)*max_hinge*T_hinge*[-1,1]*[x_h;x_g]-(x_gh>0.5)*max_hinge*T_hinge*0.5; %F_hinge = [hinge stretched]*F_hinge_Max*T_hinge*((xg-xh)-0.5)
+    F_sp_g = K_g*[1,-1]*[x_h;x_g]+K_g*x_gh_ref; %F_sp,g = K_g((xghref-(xg-xh))
     
-    F_I4 = pmax*P_I4;
-    F_I3_ant = pinch_max*P_I3_anterior*[1,-1]*[x_h;x_g]+pinch_max*P_I3_anterior*1;%: pinch force
+    F_I4 = max_I4*P_I4;
+    F_I3_ant = max_I3ant*P_I3_anterior*[1,-1]*[x_h;x_g]+max_I3ant*P_I3_anterior*1;%: pinch force
     
     %calculate F_f for grasper
     if(object_type == 0) %object is not fixed to a contrained surface
-        F_g = F_I2+F_sp_g-F_I3-F_Hi; %if the object is unconstrained it does not apply a resistive force back on the grasper. Therefore the force is just due to the muscles
+        F_g = F_I2+F_sp_g-F_I3-F_hinge; %if the object is unconstrained it does not apply a resistive force back on the grasper. Therefore the force is just due to the muscles
         
-        A2 = 1/c_g*(max_I2*T_I2*[1,-1]+K_g*[1,-1]-max_I3*T_I3*[-1,1]-max_hinge*T_Hi*(x_gh>0.5)*[-1,1]);
-        B2 = 1/c_g*(max_I2*T_I2*1+K_g*x_gh_ref+max_I3*T_I3*0+max_hinge*T_Hi*0.5);
+        A2 = 1/c_g*(max_I2*T_I2*[1,-1]+K_g*[1,-1]-max_I3*T_I3*[-1,1]-max_hinge*T_hinge*(x_gh>0.5)*[-1,1]);
+        B2 = 1/c_g*(max_I2*T_I2*1+K_g*x_gh_ref+max_I3*T_I3*0+(x_gh>0.5)*max_hinge*T_hinge*0.5);
         
         A21 = A2(1);
         A22 = A2(2);
         
         %the force on the object is approximated based on the friction
-        if(abs(F_I2+F_sp_g-F_I3-F_Hi) <= abs(mu_s_g*F_I4)) % static friction is true
+        if(abs(F_I2+F_sp_g-F_I3-F_hinge) <= abs(mu_s_g*F_I4)) % static friction is true
             %disp('static')
             static=1;
-            F_f_g = -mechanical_in_grasper*(F_I2+F_sp_g-F_I3-F_Hi);
+            F_f_g = -mechanical_in_grasper*(F_I2+F_sp_g-F_I3-F_hinge);
             bvec(18,j+1) = 1;
         else
             %disp('kinetic')
             static=0;
             F_f_g = mechanical_in_grasper*mu_k_g*F_I4;
             %specify sign of friction force
-            F_f_g = -(F_I2+F_sp_g-F_I3-F_Hi)/abs(F_I2+F_sp_g-F_I3-F_Hi)*F_f_g;
+            F_f_g = -(F_I2+F_sp_g-F_I3-F_hinge)/abs(F_I2+F_sp_g-F_I3-F_hinge)*F_f_g;
             bvec(18,j+1) = 0;
         end
         
     elseif (object_type == 1) %object is fixed to a contrained surface
-        if(abs(F_I2+F_sp_g-F_I3-F_Hi) <= abs(mu_s_g*F_I4)) % static friction is true
+        if(abs(F_I2+F_sp_g-F_I3-F_hinge) <= abs(mu_s_g*F_I4)) % static friction is true
             %disp('static')
             static=1;
-            F_f_g = -mechanical_in_grasper*(F_I2+F_sp_g-F_I3-F_Hi);
-            F_g = F_I2+F_sp_g-F_I3-F_Hi + F_f_g;
+            F_f_g = -mechanical_in_grasper*(F_I2+F_sp_g-F_I3-F_hinge);
+            F_g = F_I2+F_sp_g-F_I3-F_hinge + F_f_g;
             bvec(18,j+1) = 1;
             
             %identify matrix components for semi-implicit integration
@@ -745,15 +743,15 @@ for j=2:(nt-1)
         else
             %disp('kinetic')
             static=0;
-            F_f_g = -sign(F_I2+F_sp_g-F_I3-F_Hi)*mechanical_in_grasper*mu_k_g*F_I4;
+            F_f_g = -sign(F_I2+F_sp_g-F_I3-F_hinge)*mechanical_in_grasper*mu_k_g*F_I4;
             %specify sign of friction force
-            F_g = F_I2+F_sp_g-F_I3-F_Hi + F_f_g;
+            F_g = F_I2+F_sp_g-F_I3-F_hinge + F_f_g;
             bvec(18,j+1) = 0;
             
 
             %identify matrix components for semi-implicit integration
-            A2 = 1/c_g*(max_I2*T_I2*[1,-1]+K_g*[1,-1]-max_I3*T_I3*[-1,1]-max_hinge*T_Hi*(x_gh>0.5)*[-1,1]);
-            B2 = 1/c_g*(max_I2*T_I2*1+K_g*x_gh_ref+max_I3*T_I3*0+max_hinge*T_Hi*0.5+F_f_g);
+            A2 = 1/c_g*(max_I2*T_I2*[1,-1]+K_g*[1,-1]-max_I3*T_I3*[-1,1]-max_hinge*T_hinge*(x_gh>0.5)*[-1,1]);
+            B2 = 1/c_g*(max_I2*T_I2*1+K_g*x_gh_ref+max_I3*T_I3*0+(x_gh>0.5)*max_hinge*T_hinge*0.5+F_f_g);
 
             A21 = A2(1);
             A22 = A2(2);
@@ -765,7 +763,7 @@ for j=2:(nt-1)
 %all forces in the form F = Ax+b
     F_sp_h = K_h*[-1,0]*[x_h;x_g]+x_h_ref*K_h;
     %all muscle forces are equal and opposite
-    if(object_type == 0)     
+    if(object_type == 0)     %object is not constrained
         F_h = F_sp_h; %If the object is unconstrained it does not apply a force back on the head. Therefore the force is just due to the head spring.
         
         A1 = 1/c_b*K_h*[-1,0];
@@ -807,16 +805,16 @@ for j=2:(nt-1)
             
             if (bvec(18,j+1) == 1) %object is fixed and grasper is static  
             % F_f_g = -mechanical_in_grasper*(F_I2+F_sp_g-F_I3-F_Hi);
-                A1 = 1/c_b*(K_h*[-1,0]+(-mechanical_in_grasper*(max_I2*T_I2*[1,-1]+K_g*[1,-1]-max_I3*T_I3*[-1,1]-max_hinge*T_Hi*(x_gh>0.5)*[-1,1]))...
-                    -sign(F_sp_h+F_f_g)*mechanical_in_grasper*mu_k_h*pinch_max*P_I3_anterior*[1,-1]);
-                B1 = 1/c_b*(x_h_ref*K_h+(-mechanical_in_grasper*(max_I2*T_I2*1+K_g*x_gh_ref+max_I3*T_I3*0+max_hinge*T_Hi*0.5))...
-                    -sign(F_sp_h+F_f_g)*mechanical_in_grasper*mu_k_h*pinch_max*P_I3_anterior*1);
+                A1 = 1/c_b*(K_h*[-1,0]+(-mechanical_in_grasper*(max_I2*T_I2*[1,-1]+K_g*[1,-1]-max_I3*T_I3*[-1,1]-max_hinge*T_hinge*(x_gh>0.5)*[-1,1]))...
+                    -sign(F_sp_h+F_f_g)*mechanical_in_grasper*mu_k_h*max_I3ant*P_I3_anterior*[1,-1]);
+                B1 = 1/c_b*(x_h_ref*K_h+(-mechanical_in_grasper*(max_I2*T_I2*1+K_g*x_gh_ref+max_I3*T_I3*0+(x_gh>0.5)*max_hinge*T_hinge*0.5))...
+                    -sign(F_sp_h+F_f_g)*mechanical_in_grasper*mu_k_h*max_I3ant*P_I3_anterior*1);
                 
             else %both are kinetic
             %F_f_g = -sign(F_I2+F_sp_g-F_I3-F_Hi)*mechanical_in_grasper*mu_k_g*F_I4;
-                A1 = 1/c_b*(K_h*[-1,0]-sign(F_sp_h+F_f_g)*mechanical_in_grasper*mu_k_h*pinch_max*P_I3_anterior*[1,-1]);
-                B1 = 1/c_b*(x_h_ref*K_h-sign(F_I2+F_sp_g-F_I3-F_Hi)*mechanical_in_grasper*mu_k_g*F_I4...
-                    -sign(F_sp_h+F_f_g)*mechanical_in_grasper*mu_k_h*pinch_max*P_I3_anterior*1);                
+                A1 = 1/c_b*(K_h*[-1,0]-sign(F_sp_h+F_f_g)*mechanical_in_grasper*mu_k_h*max_I3ant*P_I3_anterior*[1,-1]);
+                B1 = 1/c_b*(x_h_ref*K_h-sign(F_I2+F_sp_g-F_I3-F_hinge)*mechanical_in_grasper*mu_k_g*F_I4...
+                    -sign(F_sp_h+F_f_g)*mechanical_in_grasper*mu_k_h*max_I3ant*P_I3_anterior*1);                
             end
             A11= A1(1);
             A12 = A1(2);
@@ -831,7 +829,7 @@ force_on_object = F_f_g+F_f_h;
 bvec(20,j+1) = F_f_g;
 bvec(21,j+1) = F_f_h;
 
-%check if seaweek is broken
+%check if seaweed is broken
 if (object_type ==1)
     if (force_on_object>seaweed_strength)
         unbroken = 0;
@@ -845,7 +843,7 @@ if (object_type ==1)
     %correct forces on bodies for broken seaweed
     if (~unbroken)       
         F_h = F_sp_h;
-        F_g = F_I2+F_sp_g-F_I3-F_Hi; 
+        F_g = F_I2+F_sp_g-F_I3-F_hinge; 
     end
 else
     bvec(7,j+1)= force_on_object;
@@ -864,23 +862,7 @@ x_last = [x_h;x_g];
 
 x_new = 1/(1-dt*trace(A))*((eye(2)+dt*[-A22,A12;A21,-A11])*x_last+dt*B);
 
-bvec(6,j+1) = x_new(2); %x_g+F_g/c_g*dt;
-bvec(8,j+1) = x_new(1); %x_h + F_h/c_b*dt;
-
-
-    %% Update feel of seaweed
-    bvec(10,j+1) = 1;
-
-   %% Update Relative position of seaweed. - need to add this kinematically
-   %cvec(1,j+1)=cvec(1,j);
-   %if seaweed is firmly grasped then the motion is the same as that of the
-   %grasper, otherwise it is the same as the body?
-%    cvec(1,j+1) = (GrapserPressure_last>(.5*pmax))*(mechanical_in_grasper)*...
-%        (cvec(1,j)+grasper_forces/tau_x*dt)+...
-%        (GrapserPressure_last<(.5*pmax))*(mechanical_in_grasper)*...
-%        (cvec(1,j)+body_forces/tau_y*dt);
-   
-   %% Update external load on seaweed - remains the same for the fixed seaweed tests
-   cvec(2,j+1)=cvec(2,j);
+bvec(6,j+1) = x_new(2); 
+bvec(8,j+1) = x_new(1); 
    
 end
