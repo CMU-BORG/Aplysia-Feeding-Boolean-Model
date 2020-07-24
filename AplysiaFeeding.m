@@ -14,7 +14,7 @@ classdef AplysiaFeeding
         max_hinge = 0.2;            %Maximum hinge force
         
         %Muscle time constants
-        tau_I4 = 1.0/sqrt(2)               %time constant (in seconds) for I4 activation
+        tau_I4 = 1.0/sqrt(2);              %time constant (in seconds) for I4 activation
         tau_I3anterior = 2.0/sqrt(2);      %time constant (in seconds) for I3anterior activation
         tau_I2_ingestion = 0.5*1/sqrt(2);  %time constant (in seconds) for I2 activation during ingestion
         tau_I2_egestion = 1.4*1/sqrt(2);   %time constant (in seconds) for I2 activation during egestion
@@ -40,18 +40,18 @@ classdef AplysiaFeeding
         mu_k_h = 0.3;               %mu_k coefficient of kinetic friction at jaws
         
         %Sensory feedback thresholds (theshold_neuron name_behavior_type)
-        thresh_B64_bite_retract = 0.89;
-        thresh_B64_swallow_retract = 0.4;
-        thresh_B64_reject_retract = 0.5;
+        thresh_B64_bite_protract = 0.89;
+        thresh_B64_swallow_protract = 0.4;
+        thresh_B64_reject_protract = 0.5;
         
-        thresh_B4B5 = 0.7;
+        thresh_B4B5_protract = 0.7;
         
-        thresh_B31_bite_retract = 0.55;
-        thresh_B31_swallow_retract = 0.4;
-        thresh_B31_reject_retract = 0.6;
-        thresh_B31_bite_protract = 0.9;
-        thresh_B31_swallow_protract = 0.75;
-        thresh_B31_reject_protract = 0.89;
+        thresh_B31_bite_off = 0.55;
+        thresh_B31_swallow_off = 0.4;
+        thresh_B31_reject_off = 0.6;
+        thresh_B31_bite_on = 0.9;
+        thresh_B31_swallow_on = 0.75;
+        thresh_B31_reject_on = 0.89;
         
         thresh_B7_bite_protract = 0.9;
         thresh_B7_reject_protract = 0.7;
@@ -60,7 +60,7 @@ classdef AplysiaFeeding
         thresh_B6B9B3_swallow_pressure = 0.25;
         thresh_B6B9B3_reject_pressure = 0.75;
         
-        thresh_B38_ingest = 0.4;
+        thresh_B38_retract = 0.4;
         
         %neural state variables
         MCC
@@ -78,8 +78,8 @@ classdef AplysiaFeeding
         B20
         
         %neural timing variables
-        refractory_CBI3 = 5000;                 %refractory perioc of CBI3 post strong B4B5 excitation
-        postActivityExcitation_B40B30 = 3000;   %time (in seconds) post B40B30 activity that slow excitation lasts
+        refractory_CBI3 = 5000;                 %refractory period (in milliseconds) of CBI3 post strong B4B5 excitation
+        postActivityExcitation_B40B30 = 3000;   %time (in milliseconds) post B40B30 activity that slow excitation lasts
         
         %muscle state variables
         P_I4
@@ -96,8 +96,8 @@ classdef AplysiaFeeding
         %body state variables
         x_h
         x_g
-        grasper_friction_state
-        jaw_friction_state
+        grasper_friction_state      %0 = kinetic friction, 1 = static friction
+        jaw_friction_state          %0 = kinetic friction, 1 = static friction
         
         
         %environment variables
@@ -114,8 +114,8 @@ classdef AplysiaFeeding
         use_hypothesized_connections = 0; %1 = yes, 0 = no
         
         %stimulation electrodes
-        stim_B4B5
-        stim_CBI2
+        stim_B4B5 %0 = off, 1 = on
+        stim_CBI2 %0 = off, 1 = on
         
     end
     %%
@@ -164,37 +164,37 @@ classdef AplysiaFeeding
             
             
             %Specify initial conditions
-            obj.MCC(1:2) = [1,1];
-            obj.CBI2(1:2) = [1,1];
-            obj.CBI3(1:2) = [0,0];
-            obj.CBI4(1:2) = [0,0];
-            obj.B64(1:2) = [0,0];
-            obj.B4B5(1:2) = [0,0];
-            obj.B40B30(1:2) = [0,0];
-            obj.B31B32(1:2) = [1,1];
-            obj.B6B9B3(1:2) = [0,0];
-            obj.B8(1:2) = [0,0];
-            obj.B7(1:2) = [0,0];
-            obj.B38(1:2) = [1,1];
-            obj.B20(1:2) = [0,0];
+            obj.MCC(1) = 1;
+            obj.CBI2(1) = 1;
+            obj.CBI3(1) = 0;
+            obj.CBI4(1) = 0;
+            obj.B64(1) = 0;
+            obj.B4B5(1) = 0;
+            obj.B40B30(1) = 0;
+            obj.B31B32(1) = 1;
+            obj.B6B9B3(1) = 0;
+            obj.B8(1) = 0;
+            obj.B7(1) = 0;
+            obj.B38(1) = 1;
+            obj.B20(1) = 0;
             
-            obj.P_I4(1:2) = [0,0];
-            obj.A_I4(1:2) = [0.05,0.05];
-            obj.P_I3_anterior(1:2) = [0,0];
-            obj.A_I3_anterior(1:2) = [0.05,0.05];
-            obj.T_I3(1:2) = [0.05,.05];
-            obj.A_I3(1:2) = [0.05,0.05];
-            obj.T_I2(1:2) = [0.05,.05];
-            obj.A_I2(1:2) = [0.05,0.05];
-            obj.T_hinge(1:2) = [0,0];
-            obj.A_hinge(1:2) = [0.05,0.05];
+            obj.P_I4(1) = 0;
+            obj.A_I4(1) = 0.05;
+            obj.P_I3_anterior(1) = 0;
+            obj.A_I3_anterior(1) = 0.05;
+            obj.T_I3(1) = 0.05;
+            obj.A_I3(1) = 0.05;
+            obj.T_I2(1) = 0.05;
+            obj.A_I2(1) = 0.05;
+            obj.T_hinge(1) = 0;
+            obj.A_hinge(1) = 0.05;
             
             
-            obj.x_h(1:2) = [0,0];
-            obj.x_g(1:2) = [0.1,0.1];
-            obj.grasper_friction_state(1:2) = [0,0];
-            obj.jaw_friction_state(1:2) = [0,0];
-            obj.force_on_object(1:2) = [0,0];
+            obj.x_h(1) = 0;
+            obj.x_g(1) = 0.1;
+            obj.grasper_friction_state(1) = 0;
+            obj.jaw_friction_state(1) = 0;
+            obj.force_on_object(1) = 0;
             
             %initialize electrodes to zero
             obj.stim_B4B5(1:nt) = zeros(1,nt);
@@ -215,7 +215,7 @@ classdef AplysiaFeeding
 
             %% Main Loop
 
-            for j=2:(nt-1)
+            for j=1:(nt-1)
                 
                 x_gh = obj.x_g(j)-obj.x_h(j);
                 
@@ -304,7 +304,7 @@ classdef AplysiaFeeding
 
                 %% Update CBI4 - added 2/27/2020
                 %{
-                CBI4 is active IF ï¿½ mediates swallowing and rejection
+                CBI4 is active IF – mediates swallowing and rejection
                     MCC is on
                     AND
                         (Mechanical Stimulation at Lips
@@ -355,10 +355,10 @@ classdef AplysiaFeeding
                 %}
 
                 B64_proprioception = (obj.CBI3(j)*(... % checks protraction threshold - original 0.5
-                                                (  obj.sens_mechanical_grasper(j) *(x_gh>obj.thresh_B64_swallow_retract))||...
-                                                ((~obj.sens_mechanical_grasper(j))*(x_gh>obj.thresh_B64_bite_retract))))...
+                                                (  obj.sens_mechanical_grasper(j) *(x_gh>obj.thresh_B64_swallow_protract))||...
+                                                ((~obj.sens_mechanical_grasper(j))*(x_gh>obj.thresh_B64_bite_protract))))...
                                             ||...
-                                                ((~obj.CBI3(j))                   *(x_gh>obj.thresh_B64_reject_retract));
+                                                ((~obj.CBI3(j))                   *(x_gh>obj.thresh_B64_reject_protract));
 
                 %B64
                 obj.B64(j+1)=obj.MCC(j)*(~obj.B31B32(j))*... % update B64
@@ -388,7 +388,7 @@ classdef AplysiaFeeding
                 obj.B4B5(j+1)=obj.MCC(j)*...
                             ((~obj.stim_B4B5(j))*... % when B4/B5 electrode is off
                                 (2*(~obj.CBI3(j))*...% if egestion
-                                    obj.B64(j)*(x_gh>obj.thresh_B4B5)) +... 
+                                    obj.B64(j)*(x_gh>obj.thresh_B4B5_protract)) +... 
                                 ((obj.CBI3(j))*(obj.sens_mechanical_grasper(j))*obj.B64(j)))... % if swallowing
                     +2*obj.stim_B4B5(j); % when B4/B5 electrode is on (and +1) then turn B4/B5 on to "emergency" mode
 
@@ -470,25 +470,25 @@ classdef AplysiaFeeding
                 %B31/B32s thresholds may vary for different behaviors. These are set
                 %here
                 if (obj.sens_mechanical_grasper(j) && obj.CBI3(j)) %swallowing
-                    prot_thresh = obj.thresh_B31_swallow_protract;
-                    ret_thresh = obj.thresh_B31_swallow_retract;
+                    on_thresh = obj.thresh_B31_swallow_on;
+                    off_thresh = obj.thresh_B31_swallow_off;
                 elseif (obj.sens_mechanical_grasper(j) && (~obj.CBI3(j))) %rejection
-                    prot_thresh = obj.thresh_B31_reject_protract;
-                    ret_thresh = obj.thresh_B31_reject_retract;
+                    on_thresh = obj.thresh_B31_reject_on;
+                    off_thresh = obj.thresh_B31_reject_off;
                 else %biting
-                    prot_thresh = obj.thresh_B31_bite_protract;
-                    ret_thresh = obj.thresh_B31_bite_retract;        
+                    on_thresh = obj.thresh_B31_bite_on;
+                    off_thresh = obj.thresh_B31_bite_off;        
                 end
 
                 obj.B31B32(j+1)=obj.MCC(j)*(...
                     obj.CBI3(j)*... %if ingestion
                         ((~obj.B64(j))*((obj.P_I4(j)<(1/2))||obj.CBI2(j))*... 
-                            ((~obj.B31B32(j))*(x_gh<ret_thresh)+...
-                               obj.B31B32(j) *(x_gh<prot_thresh)))+...
+                            ((~obj.B31B32(j))*(x_gh<off_thresh)+...
+                               obj.B31B32(j) *(x_gh<on_thresh)))+...
                   (~obj.CBI3(j))*... %if egestion
                         ((~obj.B64(j))*(obj.P_I4(j)>(1/4))*(obj.CBI2(j)||obj.CBI4(j))*...
-                            ((~obj.B31B32(j))*(x_gh<ret_thresh)+...
-                               obj.B31B32(j) *(x_gh<prot_thresh))));
+                            ((~obj.B31B32(j))*(x_gh<off_thresh)+...
+                               obj.B31B32(j) *(x_gh<on_thresh))));
 
                 %% Update B6/B9/B3: 
                 % activate once pressure is high enough in ingestion, or low enough in
@@ -509,24 +509,45 @@ classdef AplysiaFeeding
                         AND
                         Grasper pressure is less than B6/B3/B9 pressure threshold (open)
                 %}
-
-                %B6/B9/B3s thresholds may vary for different behaviors. These are set
-                %here
-                if (obj.sens_mechanical_grasper(j) && obj.CBI3(j))
-                    B6B9B3_pressure_thresh = obj.thresh_B6B9B3_swallow_pressure;
-                elseif (~obj.sens_mechanical_grasper(j) && obj.CBI3(j))
-                    B6B9B3_pressure_thresh = obj.thresh_B6B9B3_bite_pressure;
-                else
-                    B6B9B3_pressure_thresh = obj.thresh_B6B9B3_reject_pressure;
-                end
+                %{
+                B6/B9/B3 is active IF
+                    MCC is active
+                    AND
+                    B64 is active (retraction)
+                    AND
+                    B4/B5 is NOT firing strongly
+                    AND (
+                    (CBI3 is active (ingestion)
+                     AND
+                     There is NOT mechanical stimulation in mouth (biting)
+                     AND
+                     Grasper pressure is greater than B6/B3/B9 biting pressure
+                     threshold (closed))
+                    OR
+                    (CBI3 is active (ingestion)
+                     AND
+                     There is mechanical stimulation in mouth (swallowing)
+                     AND
+                     Grasper pressure is greater than B6/B3/B9 swallowing pressure
+                     threshold (closed))
+                    OR
+                    (CBI3 is NOT active (rejection)
+                     AND
+                     Grasper pressure is NOT greater than B6/B3/B9 rejection pressure
+                     threshold (open))
+                    )
+                %}
 
                 %B6/B9/B3
-                obj.B6B9B3(j+1)= obj.MCC(j)*(~(obj.B4B5(j)>=2))*(...
-                                (obj.CBI3(j))*... Ingestion / CBI3 active
-                                    (obj.B64(j))*(obj.P_I4(j)>(B6B9B3_pressure_thresh))...
+                obj.B6B9B3(j+1)= obj.MCC(j)*obj.B64(j)*(~(obj.B4B5(j)>=2))*(...
+                                (obj.CBI3(j) && ~obj.sens_mechanical_grasper(j))*... biting
+                                    (obj.P_I4(j)>obj.thresh_B6B9B3_bite_pressure)...
                                 +...
-                                (~obj.CBI3(j))*...Egestion / CBI3 inactive
-                                    (obj.B64(j))*(obj.P_I4(j)<(B6B9B3_pressure_thresh)));
+                                (obj.CBI3(j) && obj.sens_mechanical_grasper(j))*... swallowing
+                                    (obj.P_I4(j)>obj.thresh_B6B9B3_swallow_pressure)...
+                                +...
+                                (~obj.CBI3(j))*... rejection
+                                    (~(obj.P_I4(j)>obj.thresh_B6B9B3_reject_pressure)));
 
 
                 %% Update B8a/b
@@ -574,21 +595,26 @@ classdef AplysiaFeeding
                 %biomechanics
                 %{
                 B7 is active IF
-                    (The relative position of the grasper is greater than the protraction threshold
+                    ((CBI3 is NOT active (rejection)
                     OR
-                    Grasper pressure is very high) (closed)
+                    There is mechanical stimulation in mouth
                     AND
-                        CBI3 is NOT active (rejection)
+                        (The relative position of the grasper is greater than the rejection protraction threshold
                         OR
-                        There is NOT mechanical stimulation in mouth (biting)
+                        Grasper pressure is very high) (closed))
+                    OR
+                    (CBI3 is active
+                    AND
+                    There is NOT mechanical stimulation in mouth (biting)
+                    AND
+                        (The relative position of the grasper is greater than the bite protraction threshold
+                        OR
+                        Grasper pressure is very high) (closed))
                 %}
-                if (obj.sens_mechanical_grasper(j) && (~obj.CBI3(j))) %rejection
-                    B7_thresh = obj.thresh_B7_reject_protract;
-                else %biting
-                    B7_thresh = obj.thresh_B7_bite_protract;       
-                end
-
-                obj.B7(j+1) = obj.MCC(j)*((~obj.CBI3(j)) || (~obj.sens_mechanical_grasper(j)))*((x_gh>=B7_thresh)||(obj.P_I4(j)>(.97)));
+                obj.B7(j+1) = obj.MCC(j)*( ...
+                                  (((~obj.CBI3(j)) ||  (obj.sens_mechanical_grasper(j)))*((x_gh>=obj.thresh_B7_reject_protract)||(obj.P_I4(j)>(.97)))) + ...
+                                  (  (obj.CBI3(j)  && (~obj.sens_mechanical_grasper(j)))*((x_gh>=obj.thresh_B7_bite_protract)  ||(obj.P_I4(j)>(.97)))) ...
+                                  );
 
                 %% Update B38: 
                 % If already active, remain active until protracted past
@@ -609,7 +635,7 @@ classdef AplysiaFeeding
 
                 obj.B38(j+1)=obj.MCC(j)*(obj.sens_mechanical_grasper(j))*(...
                     (obj.CBI3(j))*(... % if CBI3 active do the following:
-                        ((x_gh)<obj.thresh_B38_ingest)));
+                        ((x_gh)<obj.thresh_B38_retract)));
 
                 %% Update I4: If food present, and grasper closed, then approaches
                 % pmax pressure as dp/dt=(B8*pmax-p)/tau_p.  Use a quasi-backward-Euler
@@ -825,17 +851,16 @@ classdef AplysiaFeeding
                 
                 step_switch = round(t_switch/obj.TimeStep);
                 
-                %assume swallow and initialize sensory variables
-                obj.sens_chemical_lips = ones(1,nt);
-                obj.sens_mechanical_lips = ones(1,nt);
-                obj.sens_mechanical_grasper = ones(1,nt);
-                obj.fixation_type = ones(1,nt);
-                
                 if (strcmp(behavior_1,'bite'))
                     obj.sens_chemical_lips = ones(1,nt);
                     obj.sens_mechanical_lips = ones(1,nt);
                     obj.sens_mechanical_grasper = zeros(1,nt);
                     obj.fixation_type = zeros(1,nt);
+                elseif (strcmp(behavior_1,'swallow'))
+                    obj.sens_chemical_lips = ones(1,nt);
+                    obj.sens_mechanical_lips = ones(1,nt);
+                    obj.sens_mechanical_grasper = ones(1,nt);
+                    obj.fixation_type = ones(1,nt);
                 elseif (strcmp(behavior_1,'reject'))
                     obj.sens_chemical_lips = zeros(1,nt);
                     obj.sens_mechanical_lips = ones(1,nt);
@@ -872,6 +897,12 @@ classdef AplysiaFeeding
                 obj.stim_B4B5(1:nt) = zeros(1,nt); % initialize extracellular stimulation of B4/B5
                 obj.stim_B4B5(onTime:(onTime+duration)) = ones(1,length(obj.stim_B4B5(onTime:(onTime+duration))));
                 obj.stim_B4B5((onTime+duration):end) = zeros(1,length(obj.stim_B4B5((onTime+duration):end)));   
+            end
+            
+            if (strcmp(neuron,'CBI2'))
+                obj.stim_CBI2(1:nt) = zeros(1,nt); % initialize extracellular stimulation of CBI-2
+                obj.stim_CBI2(onTime:(onTime+duration)) = ones(1,length(obj.stim_CBI2(onTime:(onTime+duration))));
+                obj.stim_CBI2((onTime+duration):end) = zeros(1,length(obj.stim_CBI2((onTime+duration):end)));   
             end
             
         end

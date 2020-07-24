@@ -1,8 +1,8 @@
 close all
 clear all
 
-%% Specify label suffix for saving figure;s
-suffix = '_7_18_2020';
+%% Specify label suffix for saving figures
+suffix = '_7_24_2020';
 xlimits = [0 40];
 
 %% Initialize simulation object
