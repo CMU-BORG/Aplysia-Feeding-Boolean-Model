@@ -304,7 +304,7 @@ classdef AplysiaFeeding
 
                 %% Update CBI4 - added 2/27/2020
                 %{
-                CBI4 is active IF – mediates swallowing and rejection
+                CBI4 is active IF ï¿½ mediates swallowing and rejection
                     MCC is on
                     AND
                         (Mechanical Stimulation at Lips
@@ -1227,7 +1227,10 @@ classdef AplysiaFeeding
             set(hYLabel,'rotation',0,'VerticalAlignment','middle','HorizontalAlignment','right','Position',get(hYLabel,'Position')-[0.05 0 0])
             set(gca,'XColor','none')
 
-            saveas(gcf,[label '_all.png'])            
+            if ~exist('fig', 'dir')
+                mkdir('fig');
+            end
+            saveas(gcf,['fig/' label '_all.png'])            
         end
         
     end

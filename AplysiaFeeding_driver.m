@@ -133,7 +133,10 @@ for strength = seaweed_strength_min:step_size:seaweed_strength_max
     i=i+1;
 end
 xlabel('Time (s)')
-saveas(gcf,['SeaweedStrength_' suffix '.png'])
+if ~exist('fig', 'dir')
+    mkdir('fig');
+end
+saveas(gcf,['fig/' 'SeaweedStrength_' suffix '.png'])
 
 %% Rejection
 disp('Rejection')
