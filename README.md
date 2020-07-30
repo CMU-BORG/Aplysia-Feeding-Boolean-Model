@@ -8,15 +8,17 @@ Vickie Webster Wood, CMU.
 
 Peter Thomas, CWRU.
 
+Jeff Gill, CWRU.
+
 in consultation with Hillel Chiel, CWRU.
 
-in consultation with Jeff Gill, CWRU
 
-Last Update: 7/10/2020
 
-This Model contains three MATLAB .m files for simulating Aplysia-like multifunctional feeding behavior. The three files are as follows:
+Last Update: 7/30/2020
 
-1. Multibehavior_driver_withfrictionImplicit.m
+This Model contains two MATLAB .m files for simulating Aplysia-like multifunctional feeding behavior. The two files are as follows:
+
+1. AplysiaFeeding_driver.m
 
 This file is the driver function which contains code sections for running the following behaviors
 
@@ -28,22 +30,17 @@ This file is the driver function which contains code sections for running the fo
 	F. Transitions from biting to swallowing
 	G. Stimulation of the B4/B5 interneuron during swallowing
 	
-Multibehavior_driver_withfrictionImplicit.m call two helper functions:
+AplysiaFeeding_driver.m uses the AplysiaFeeding class to create an aplysia object and perform simulation and plotting tasks.
 	
-2. Aplysia_boolean_model_withfrictionImplicit.m
+2. AplysiaFeeding.m
 
-This file is the hybrid Boolean/continuous model of the Aplysia feeding circuitry and biomechanics.
-
-
-3. Plot_behavior.m
-
-This is a helper function to plot the neural activity, relative grasper position, and force on the seaweed following simulation of a given behavior
+This file is a class to establish, run, and plot the hybrid Boolean/continuous model of the Aplysia feeding circuitry and biomechanics.
 
 
 
 ------------------------------------------------------------------------------------------------------------------
-To generate figures 11-13, open the Aplysia_boolean_model_withfrictionImplicit.m file and ensure that the code for CBI-2 and CBI-3 is using the lines for the %without hypothesized connections sections. Run Multibehavior_driver_withfrictionImplicit.m
+To generate figures 11-13, open the AplysiaFeeding_driver.m file. Initialize the AplysiaFeeding object (line 9) and run sections A-F. Make sure that the variable aplysia.use_hypothesized_connections = 0.
 
-To generate figure 14, comment our the %without hypothesized connections lines and uncomment the %with hypothesized connections codes to enable these connections. Run Multibehavior_driver_withfrictionImplicit.m
+To generate figure 14, open the AplysiaFeeding_driver.m file. Initialize the AplysiaFeeding object (line 9) and run sections G. Make sure that the variable aplysia.use_hypothesized_connections = 1.
 
 
