@@ -696,30 +696,55 @@ classdef AplysiaFeeding
                     end
 
                 elseif (obj.fixation_type(j) == 1) %object is fixed to a contrained surface
-                    if(abs(F_I2+F_sp_g-F_I3-F_hinge) <= abs(obj.mu_s_g*F_I4)) % static friction is true
-                        %disp('static')
-                        F_f_g = -obj.sens_mechanical_grasper(j)*(F_I2+F_sp_g-F_I3-F_hinge);
-                        %F_g = F_I2+F_sp_g-F_I3-F_hinge + F_f_g;
-                        obj.grasper_friction_state(j+1) = 1;
+                    if unbroken
+                        if(abs(F_I2+F_sp_g-F_I3-F_hinge) <= abs(obj.mu_s_g*F_I4)) % static friction is true
+                            %disp('static')
+                            F_f_g = -obj.sens_mechanical_grasper(j)*(F_I2+F_sp_g-F_I3-F_hinge);
+                            %F_g = F_I2+F_sp_g-F_I3-F_hinge + F_f_g;
+                            obj.grasper_friction_state(j+1) = 1;
 
-                        %identify matrix components for semi-implicit integration
-                        A21 = 0;
-                        A22 = 0;
-                        B2 = 0;
+                            %identify matrix components for semi-implicit integration
+                            A21 = 0;
+                            A22 = 0;
+                            B2 = 0;
+                            
+                        else
+                            %disp('kinetic')
+                            F_f_g = -sign(F_I2+F_sp_g-F_I3-F_hinge)*obj.sens_mechanical_grasper(j)*obj.mu_k_g*F_I4;
+                            %specify sign of friction force
+                            %F_g = F_I2+F_sp_g-F_I3-F_hinge + F_f_g;
+                            obj.grasper_friction_state(j+1) = 0;
+
+
+                            %identify matrix components for semi-implicit integration
+                            A2 = 1/obj.c_g*(obj.max_I2*obj.T_I2(j)*[1,-1]+obj.K_sp_g*[1,-1]-obj.max_I3*obj.T_I3(j)*[-1,1]-obj.max_hinge*obj.T_hinge(j)*(x_gh>0.5)*[-1,1]);
+                            B2 = 1/obj.c_g*(obj.max_I2*obj.T_I2(j)*1+obj.K_sp_g*obj.x_gh_ref+obj.max_I3*obj.T_I3(j)*0+(x_gh>0.5)*obj.max_hinge*obj.T_hinge(j)*0.5+F_f_g);
+
+                            A21 = A2(1);
+                            A22 = A2(2);
+                            
+                        end
                     else
-                        %disp('kinetic')
-                        F_f_g = -sign(F_I2+F_sp_g-F_I3-F_hinge)*obj.sens_mechanical_grasper(j)*obj.mu_k_g*F_I4;
-                        %specify sign of friction force
-                        %F_g = F_I2+F_sp_g-F_I3-F_hinge + F_f_g;
-                        obj.grasper_friction_state(j+1) = 0;
+                        %F_g = F_I2+F_sp_g-F_I3-F_hinge; %if the object is unconstrained it does not apply a resistive force back on the grasper. Therefore the force is just due to the muscles
 
-
-                        %identify matrix components for semi-implicit integration
                         A2 = 1/obj.c_g*(obj.max_I2*obj.T_I2(j)*[1,-1]+obj.K_sp_g*[1,-1]-obj.max_I3*obj.T_I3(j)*[-1,1]-obj.max_hinge*obj.T_hinge(j)*(x_gh>0.5)*[-1,1]);
-                        B2 = 1/obj.c_g*(obj.max_I2*obj.T_I2(j)*1+obj.K_sp_g*obj.x_gh_ref+obj.max_I3*obj.T_I3(j)*0+(x_gh>0.5)*obj.max_hinge*obj.T_hinge(j)*0.5+F_f_g);
+                        B2 = 1/obj.c_g*(obj.max_I2*obj.T_I2(j)*1+obj.K_sp_g*obj.x_gh_ref+obj.max_I3*obj.T_I3(j)*0+(x_gh>0.5)*obj.max_hinge*obj.T_hinge(j)*0.5);
 
                         A21 = A2(1);
                         A22 = A2(2);
+
+                        %the force on the object is approximated based on the friction
+                        if(abs(F_I2+F_sp_g-F_I3-F_hinge) <= abs(obj.mu_s_g*F_I4)) % static friction is true
+                            %disp('static')
+                            F_f_g = -obj.sens_mechanical_grasper(j)*(F_I2+F_sp_g-F_I3-F_hinge);
+                            obj.grasper_friction_state(j+1) = 1;
+                        else
+                            %disp('kinetic')
+                            F_f_g = obj.sens_mechanical_grasper(j)*obj.mu_k_g*F_I4;
+                            %specify sign of friction force
+                            F_f_g = -(F_I2+F_sp_g-F_I3-F_hinge)/abs(F_I2+F_sp_g-F_I3-F_hinge)*F_f_g;
+                            obj.grasper_friction_state(j+1) = 0;
+                        end
                     end
                 end
                 %[j*dt position_grasper_relative I2 F_sp I3 hinge GrapserPressure_last F_g]
@@ -748,58 +773,61 @@ classdef AplysiaFeeding
                     end
                 elseif (obj.fixation_type(j) == 1)
                     %calcuate friction due to jaws
-                    if(abs(F_sp_h+F_f_g) <= abs(obj.mu_s_h*F_I3_ant)) % static friction is true
+                    if unbroken %if the seaweed is intact
+                        if(abs(F_sp_h+F_f_g) <= abs(obj.mu_s_h*F_I3_ant)) % static friction is true
+                            %disp('static2')
+                            F_f_h = -obj.sens_mechanical_grasper(j)*(F_sp_h+F_f_g); %only calculate the force if an object is actually present
+                            %F_h = F_sp_h+F_f_g + F_f_h;
+                            obj.jaw_friction_state(j+1) = 1;
+
+                            A11 = 0;
+                            A12 = 0;
+                            B1 = 0;
+
+                        else
+                            %disp('kinetic2')
+                            F_f_h = -sign(F_sp_h+F_f_g)*obj.sens_mechanical_grasper(j)*obj.mu_k_h*F_I3_ant; %only calculate the force if an object is actually present
+                            %F_h = F_sp_h+F_f_g + F_f_h;
+
+                            obj.jaw_friction_state(j+1) = 0;
+
+                            if (obj.grasper_friction_state(j+1) == 1) %object is fixed and grasper is static  
+                            % F_f_g = -mechanical_in_grasper*(F_I2+F_sp_g-F_I3-F_Hi);
+                                A1 = 1/obj.c_h*(obj.K_sp_h*[-1,0]+(-obj.sens_mechanical_grasper(j)*(obj.max_I2*obj.T_I2(j)*[1,-1]+obj.K_sp_g*[1,-1]-obj.max_I3*obj.T_I3(j)*[-1,1]-obj.max_hinge*obj.T_hinge(j)*(x_gh>0.5)*[-1,1]))...
+                                    -sign(F_sp_h+F_f_g)*obj.sens_mechanical_grasper(j)*obj.mu_k_h*obj.max_I3ant*obj.P_I3_anterior(j)*[1,-1]);
+                                B1 = 1/obj.c_h*(obj.x_h_ref*obj.K_sp_h+(-obj.sens_mechanical_grasper(j)*(obj.max_I2*obj.T_I2(j)*1+obj.K_sp_g*obj.x_gh_ref+obj.max_I3*obj.T_I3(j)*0+(x_gh>0.5)*obj.max_hinge*obj.T_hinge(j)*0.5))...
+                                    -sign(F_sp_h+F_f_g)*obj.sens_mechanical_grasper(j)*obj.mu_k_h*obj.max_I3ant*obj.P_I3_anterior(j)*1);
+
+                            else %both are kinetic
+                            %F_f_g = -sign(F_I2+F_sp_g-F_I3-F_Hi)*mechanical_in_grasper*mu_k_g*F_I4;
+                                A1 = 1/obj.c_h*(obj.K_sp_h*[-1,0]-sign(F_sp_h+F_f_g)*obj.sens_mechanical_grasper(j)*obj.mu_k_h*obj.max_I3ant*obj.P_I3_anterior(j)*[1,-1]);
+                                B1 = 1/obj.c_h*(obj.x_h_ref*obj.K_sp_h-sign(F_I2+F_sp_g-F_I3-F_hinge)*obj.sens_mechanical_grasper(j)*obj.mu_k_g*F_I4...
+                                    -sign(F_sp_h+F_f_g)*obj.sens_mechanical_grasper(j)*obj.mu_k_h*obj.max_I3ant*obj.P_I3_anterior(j)*1);                
+                            end
+                            A11= A1(1);
+                            A12 = A1(2);
+                        end
+                    else % if the seaweed is broken the jaws act as if unconstrained
+                        if(abs(F_sp_h+F_f_g) <= abs(obj.mu_s_h*F_I3_ant)) % static friction is true
                         %disp('static2')
-                        F_f_h = -obj.sens_mechanical_grasper(j)*(F_sp_h+F_f_g); %only calculate the force if an object is actually present
-                        %F_h = F_sp_h+F_f_g + F_f_h;
-                        obj.jaw_friction_state(j+1) = 1;
+                            F_f_h = -obj.sens_mechanical_grasper(j)*(F_sp_h+F_f_g); %only calculate the force if an object is actually present
+                            obj.jaw_friction_state(j+1) = 1;
+                        else
+                            %disp('kinetic2')
+                            F_f_h = -sign(F_sp_h+F_f_g)*obj.sens_mechanical_grasper(j)*obj.mu_k_h*F_I3_ant; %only calculate the force if an object is actually present
+                            obj.jaw_friction_state(j+1) = 0;
+                        end
+                        
+                        A1 = 1/obj.c_h*obj.K_sp_h*[-1,0];
+                        B1 = 1/obj.c_h*obj.x_h_ref*obj.K_sp_h;
 
-                        A11 = 0;
-                        A12 = 0;
-                        B1 = 0;
-
-                    else
-                        %disp('kinetic2')
-                        F_f_h = -sign(F_sp_h+F_f_g)*obj.sens_mechanical_grasper(j)*obj.mu_k_h*F_I3_ant; %only calculate the force if an object is actually present
-                        %F_h = F_sp_h+F_f_g + F_f_h;
-
+                        A11 = A1(1);
+                        A12 = A1(2);
                         obj.jaw_friction_state(j+1) = 0;
 
-                        if (obj.grasper_friction_state(j+1) == 1) %object is fixed and grasper is static  
-                        % F_f_g = -mechanical_in_grasper*(F_I2+F_sp_g-F_I3-F_Hi);
-                            A1 = 1/obj.c_h*(obj.K_sp_h*[-1,0]+(-obj.sens_mechanical_grasper(j)*(obj.max_I2*obj.T_I2(j)*[1,-1]+obj.K_sp_g*[1,-1]-obj.max_I3*obj.T_I3(j)*[-1,1]-obj.max_hinge*obj.T_hinge(j)*(x_gh>0.5)*[-1,1]))...
-                                -sign(F_sp_h+F_f_g)*obj.sens_mechanical_grasper(j)*obj.mu_k_h*obj.max_I3ant*obj.P_I3_anterior(j)*[1,-1]);
-                            B1 = 1/obj.c_h*(obj.x_h_ref*obj.K_sp_h+(-obj.sens_mechanical_grasper(j)*(obj.max_I2*obj.T_I2(j)*1+obj.K_sp_g*obj.x_gh_ref+obj.max_I3*obj.T_I3(j)*0+(x_gh>0.5)*obj.max_hinge*obj.T_hinge(j)*0.5))...
-                                -sign(F_sp_h+F_f_g)*obj.sens_mechanical_grasper(j)*obj.mu_k_h*obj.max_I3ant*obj.P_I3_anterior(j)*1);
-
-                        else %both are kinetic
-                        %F_f_g = -sign(F_I2+F_sp_g-F_I3-F_Hi)*mechanical_in_grasper*mu_k_g*F_I4;
-                            A1 = 1/obj.c_h*(obj.K_sp_h*[-1,0]-sign(F_sp_h+F_f_g)*obj.sens_mechanical_grasper(j)*obj.mu_k_h*obj.max_I3ant*obj.P_I3_anterior(j)*[1,-1]);
-                            B1 = 1/obj.c_h*(obj.x_h_ref*obj.K_sp_h-sign(F_I2+F_sp_g-F_I3-F_hinge)*obj.sens_mechanical_grasper(j)*obj.mu_k_g*F_I4...
-                                -sign(F_sp_h+F_f_g)*obj.sens_mechanical_grasper(j)*obj.mu_k_h*obj.max_I3ant*obj.P_I3_anterior(j)*1);                
-                        end
-                        A11= A1(1);
-                        A12 = A1(2);
                     end
                 end
                 %[position_buccal_last F_h F_sp I3 hinge force_pinch F_H]
-
-
-
-            %% calculate force on object
-            obj.force_on_object(j+1) = F_f_g+F_f_h;
-
-            %check if seaweed is broken
-            if (obj.fixation_type(j) ==1)
-                if (obj.force_on_object(j+1)>obj.seaweed_strength)
-                    unbroken = 0;
-                end
-                %check to see if a new cycle has started
-                if (~unbroken && x_gh>0.8 && (obj.P_I4(j+1)>(.5)))
-                   unbroken = 1; 
-                end
-                obj.force_on_object(j+1)= unbroken*obj.force_on_object(j+1);
-            end
 
 
             %% Integrate body motions
@@ -815,7 +843,27 @@ classdef AplysiaFeeding
             x_new = 1/(1-obj.TimeStep*trace(A))*((eye(2)+obj.TimeStep*[-A22,A12;A21,-A11])*x_last+obj.TimeStep*B);
 
             obj.x_g(j+1) = x_new(2); 
-            obj.x_h(j+1) = x_new(1); 
+            obj.x_h(j+1) = x_new(1);
+            
+            %% calculate force on object
+            obj.force_on_object(j+1) = F_f_g+F_f_h;
+
+            %check if seaweed is broken
+            if (obj.fixation_type(j) ==1)
+                if (obj.force_on_object(j+1)>obj.seaweed_strength)
+                    unbroken = 0;
+                end
+                %check to see if a new cycle has started
+                x_gh_next = obj.x_g(j+1)-obj.x_h(j+1);
+                
+                if (~unbroken && x_gh <0.3 && x_gh_next>x_gh)%x_gh<0.3)
+                   unbroken = 1; 
+                end
+                obj.force_on_object(j+1)= unbroken*obj.force_on_object(j+1);
+            end
+
+
+             
 
             end
 
@@ -910,7 +958,7 @@ classdef AplysiaFeeding
         function generatePlots(obj,label,xlimits)
             t=obj.StartingTime:obj.TimeStep:obj.EndTime;
 
-            figure('Position', [10 10 800 900]);
+            figure('Position', [10 10 1200 600]);
             set(gcf,'Color','white')
             xl=xlimits; % show full time scale
             ymin = 0;

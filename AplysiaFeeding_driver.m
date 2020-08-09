@@ -2,7 +2,7 @@ close all
 clear all
 
 %% Specify label suffix for saving figures
-suffix = '_7_24_2020';
+suffix = '_8_9_2020';
 xlimits = [0 40];
 
 %% Initialize simulation object
@@ -26,17 +26,20 @@ aplysia.generatePlots(['Swallow_' suffix],xlimits);
 
 %% Multifunctional swallowing of different strength seaweeds
 disp('Swallowing variable strength seaweed')
-seaweed_strength_min = 0.15;
+seaweed_strength_min = 0.25;
 seaweed_strength_max = 0.55;
-step_size = 0.1;
-num_strengths = round((seaweed_strength_max-seaweed_strength_min)/step_size+1);
+step_size = 0.075;
+
+seaweed_strength_vec = seaweed_strength_min:step_size:seaweed_strength_max;
+
+num_strengths = length(seaweed_strength_vec); %round((seaweed_strength_max-seaweed_strength_min)/step_size+1);
 i = 1;
 t=aplysia.StartingTime:aplysia.TimeStep:aplysia.EndTime;
 
 figure;
 set(gcf,'Color','white')
-for strength = seaweed_strength_min:step_size:seaweed_strength_max
-    aplysia.seaweed_strength = strength;
+for ind = 1:length(seaweed_strength_vec)
+    aplysia.seaweed_strength = seaweed_strength_vec(ind);
     aplysia = aplysia.setSensoryStates('swallow');
     tic
     aplysia = aplysia.runSimulation();
@@ -45,8 +48,18 @@ for strength = seaweed_strength_min:step_size:seaweed_strength_max
     subplot(num_strengths,1,i)
     plot(t,aplysia.force_on_object,'k','LineWidth',2)
     hold on
-    plot(t,(aplysia.x_g-aplysia.x_h),'b','LineWidth',2)
+    grasper_motion = (aplysia.x_g-aplysia.x_h);
+    grasper_pressure = aplysia.grasper_friction_state;
+    idx = grasper_pressure >=1;%pmax*0.6;
+    idy = grasper_pressure <1;%pmax*0.6;
+
+    grasper_motion_pressure(idx) = grasper_motion(idx);
+    grasper_motion_pressure(idy)=NaN;
+
+    plot(t,grasper_motion_pressure,'b','LineWidth',4)
+    plot(t,grasper_motion,'b','LineWidth',2)
     hold off
+    
     if i==1
         legend({'Normalized Force on Transducer','Normalized Grasper Motion'},'Orientation','horizontal','Position',[0.337905404191644,0.941469018401128,0.350331117341061,0.027292575735973],'Box','off','FontSize',12)
     end
@@ -59,7 +72,7 @@ for strength = seaweed_strength_min:step_size:seaweed_strength_max
     set(gca,'ytick',[0 1]);
     set(gca,'YTickLabel',[0 1]);
     
-    if (strength == seaweed_strength_min || strength == seaweed_strength_max)
+    if (aplysia.seaweed_strength == seaweed_strength_min || aplysia.seaweed_strength == seaweed_strength_max)
         %Determine locations of protraction retraction boxes
          tstep = t(2)-t(1);
          startnum = xlimits(1)/tstep;
@@ -127,7 +140,7 @@ for strength = seaweed_strength_min:step_size:seaweed_strength_max
         hold off
     end
     
-    if (strength ~= seaweed_strength_max)
+    if (aplysia.seaweed_strength ~= seaweed_strength_max)
         set(gca,'XTickLabel',[]);
     end
     i=i+1;
@@ -164,7 +177,7 @@ aplysia = aplysia.setSensoryStates('bite','swallow',t_switch);
 tic
 aplysia = aplysia.runSimulation();
 toc
-aplysia.generatePlots(['Swallow_to_reject_' suffix],xlimits);
+aplysia.generatePlots(['Biting_to_swallowing_' suffix],xlimits);
 
 %% B4/B5 Stimulation
 
