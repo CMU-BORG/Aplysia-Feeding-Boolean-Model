@@ -1,6 +1,6 @@
 # Aplysia-Feeding-Boolean-Model
 Discrete time, discrete state representation of Aplysia central pattern generator for multifunctional feeding behavior, coupled to continuous, (relatively) low biomechanics.  
-
+Archived source code is available through Zenodo [![DOI](https://zenodo.org/badge/261357750.svg)](https://zenodo.org/badge/latestdoi/261357750)
 
 Authors:
 
