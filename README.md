@@ -44,3 +44,4 @@ To generate figures 11-13, open the AplysiaFeeding_driver.m file. Initialize the
 To generate figure 14, open the AplysiaFeeding_driver.m file. Initialize the AplysiaFeeding object (line 9) and run sections G. Make sure that the variable aplysia.use_hypothesized_connections = 1.
 
 
+Minor commenting update: 11/19/2020
