@@ -304,7 +304,7 @@ classdef AplysiaFeeding
 
                 %% Update CBI4 - added 2/27/2020
                 %{
-                CBI4 is active IF – mediates swallowing and rejection
+                CBI4 is active IF Â– mediates swallowing and rejection
                     MCC is on
                     AND
                         (Mechanical Stimulation at Lips
@@ -638,25 +638,24 @@ classdef AplysiaFeeding
                         ((x_gh)<obj.thresh_B38_retract)));
 
                 %% Update I4: If food present, and grasper closed, then approaches
-                % pmax pressure as dp/dt=(B8*pmax-p)/tau_p.  Use a quasi-backward-Euler
+                % max pressure 
                 obj.P_I4(j+1)=((obj.tau_I4*obj.P_I4(j)+obj.A_I4(j)*obj.TimeStep)/(obj.tau_I4+obj.TimeStep));%old -- keep this version
                 obj.A_I4(j+1)=((obj.tau_I4*obj.A_I4(j)+obj.B8(j)*obj.TimeStep)/(obj.tau_I4+obj.TimeStep));
 
                 %% Update pinch force: If food present, and grasper closed, then approaches
-                % pmax pressure as dp/dt=(B8*pmax-p)/tau_p.  Use a quasi-backward-Euler
+                % max pressure
                 obj.P_I3_anterior(j+1)=(obj.tau_I3anterior*obj.P_I3_anterior(j)+obj.A_I3_anterior(j)*obj.TimeStep)/(obj.tau_I3anterior+obj.TimeStep);
                 obj.A_I3_anterior(j+1)=(obj.tau_I3anterior*obj.A_I3_anterior(j)+(obj.B38(j)+obj.B6B9B3(j))*obj.TimeStep)/(obj.tau_I3anterior+obj.TimeStep);
 
-                %% Update I3 (retractor) activation: dm/dt=(B6-m)/tau_m
+                %% Update I3 (retractor) activation: 
                 obj.T_I3(j+1)=(obj.tau_I3*obj.T_I3(j)+obj.TimeStep*obj.A_I3(j))/(obj.tau_I3+obj.TimeStep);
                 obj.A_I3(j+1)=(obj.tau_I3*obj.A_I3(j)+obj.TimeStep*obj.B6B9B3(j))/(obj.tau_I3+obj.TimeStep);
 
-                %% Update I2 (protractor) activation: dm/dt=(B31-m)/tau_m.  quasi-B-Eul.
+                %% Update I2 (protractor) activation: 
                 obj.T_I2(j+1)=((obj.tau_I2_ingestion*obj.CBI3(j)+obj.tau_I2_egestion*(1-obj.CBI3(j)))*obj.T_I2(j)+obj.TimeStep*obj.A_I2(j))/((obj.tau_I2_ingestion*obj.CBI3(j)+obj.tau_I2_egestion*(1-obj.CBI3(j)))+obj.TimeStep);
                 obj.A_I2(j+1)=((obj.tau_I2_ingestion*obj.CBI3(j)+obj.tau_I2_egestion*(1-obj.CBI3(j)))*obj.A_I2(j)+obj.TimeStep*obj.B31B32(j))/((obj.tau_I2_ingestion*obj.CBI3(j)+obj.tau_I2_egestion*(1-obj.CBI3(j)))+obj.TimeStep);
 
-                %% Update Hinge activation: dm/dt=(B7-m)/tau_m.  quasi-B-Eul.
-                %bvec(12,j+1)=(tau_m*hinge_last+dt*B7_last)/(tau_m+dt);%old
+                %% Update Hinge activation: 
                 obj.T_hinge(j+1)=(obj.tau_hinge*obj.T_hinge(j)+obj.TimeStep*obj.A_hinge(j))/(obj.tau_hinge+obj.TimeStep);%new
                 obj.A_hinge(j+1)=(obj.tau_hinge*obj.A_hinge(j)+obj.TimeStep*obj.B7(j))/(obj.tau_hinge+obj.TimeStep);
 
